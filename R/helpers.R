@@ -47,12 +47,35 @@ YEAR_COLORS <- c(
   "2016" = "#2C7FB8"
 )
 
-# Subdued base map (CartoDB Positron) - pale grey, low chroma.
+# Phase colors (nominal, but consistent with annual-cycle order)
+PHASE_COLORS <- c(
+  "breeding"   = "#1B7837",   # forest green
+  "migration"  = "#E08214",   # amber (transit)
+  "wintering"  = "#542788"    # deep purple (residence in tropics)
+)
+
+# Sequential ramp for time / count
+SEQ_RAMP <- function(n = 9, option = "viridis") {
+  viridisLite::viridis(n, option = option, direction = 1, end = 0.95)
+}
+
+# Heatmap gradient: leaflet.extras::addHeatmap wraps a *character vector*
+# of colors with colorNumeric internally, so we pass it as such.
+# Viridis sequence (light yellow -> dark purple) - perceptually uniform,
+# colorblind-safe. NEVER spectral / rainbow.
+HEATMAP_GRADIENT <- c("#FDE725", "#7AD151", "#22A884",
+                      "#2A788E", "#414487", "#440154")
+
+# Subdued base map (CartoDB Positron) - pale grey, low chroma
 BASEMAP_URL <- "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
 BASEMAP_ATTR <- paste0(
   "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> ",
   "contributors &copy; <a href=\"https://carto.com/attributions\">CARTO</a>"
 )
+
+# Optional darker basemap for the animation tab (better contrast for moving
+# bright symbols on a darker ground - figure/ground principle).
+DARK_BASEMAP_URL <- "https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png"
 
 # Map extent: covers all breeding colonies + entire trans-Saharan migration
 # corridor down to the wintering grounds at 5 N.

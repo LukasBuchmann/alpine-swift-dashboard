@@ -139,14 +139,15 @@ animation_server <- function(id, filtered, processed) {
       if (is.null(v) || is.na(v)) 100 else as.numeric(v)
     }) |> shiny::throttle(400)
 
-    # ---- Animation lookup: pre-computed 6h-subsampled hourly_thin ----------
-    # Built ONCE at data_processing time (processed$hourly_thin). Per-frame
-    # work is now a single integer-window filter, no row-wise computation.
+    # ---- Indexed hourly stream ---------------------------------------------
     hourly_indexed <- reactive({
-      df <- filtered$hourly_thin_anim()
+      df <- filtered$hourly_anim()
       if (is.null(df) || nrow(df) == 0) return(NULL)
-      df <- df |> dplyr::filter(!is.na(lat), !is.na(lon))
+      
+      df <- df |> dplyr::filter(!is.na(lat), !is.na(lon), !is.na(timestamp))
       if (nrow(df) == 0) return(NULL)
+      
+      df$hoy <- (as.integer(df$doy) - 1L) * 24L + as.integer(lubridate::hour(df$timestamp))
       df
     })
 
@@ -249,24 +250,18 @@ animation_server <- function(id, filtered, processed) {
       # =======================================================================
       if (identical(mode, "overview")) {
         pal <- resolve_palette(df_idx, gm)
-
+        
         bg <- df_idx
         bg$col <- pal$col
 
-        # Overview mode: show EVERY filtered fix (no sampling). A hard
-        # ceiling of 60k keeps Leaflet's canvas happy on slow machines;
-        # below that, every point is drawn.
-        n_max <- 60000L
-        if (nrow(bg) > n_max) {
-          set.seed(2026L)
-          bg <- bg[sample(nrow(bg), n_max), ]
-        }
+        n_max <- 8000L
+        if (nrow(bg) > n_max) bg <- bg[sample(nrow(bg), n_max), ]
 
         proxy |> addCircleMarkers(
           data = bg, lng = ~lon, lat = ~lat, 
           radius = ~ifelse(phase == "migration", 3.2, 2.4),
           color = ~col, fillColor = ~col, stroke = FALSE, 
-          fillOpacity = 0.28, group = "Tracking points",
+          fillOpacity = 0.40, group = "Tracking points",
           popup = ~sprintf("<b>%s</b> &middot; %s<br/>Bird: <code>%s</code> (yr %s)<br/>%s &middot; %s", 
                            htmltools::htmlEscape(colony_name), htmltools::htmlEscape(country), 
                            htmltools::htmlEscape(bird_id), htmltools::htmlEscape(as.character(year)), 
@@ -276,7 +271,7 @@ animation_server <- function(id, filtered, processed) {
       }
 
       # =======================================================================
-      # SCENARIO 2: ANIMATION MODE (Show only active points, density & trails)
+      # SCENARIO 2: ANIMATION MODE (Show only active points & trails)
       # =======================================================================
       d_f <- input$doy
       if (is.null(d_f) || is.na(d_f)) d_f <- 100
@@ -296,7 +291,6 @@ animation_server <- function(id, filtered, processed) {
                            htmltools::htmlEscape(bird_id), htmltools::htmlEscape(as.character(year)), 
                            format(date, "%Y-%m-%d"), stage_label(phase))
         )
-        
       }
 
       # 3. Process Sperm Trails
