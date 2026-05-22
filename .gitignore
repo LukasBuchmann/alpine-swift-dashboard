@@ -1,0 +1,31 @@
+# R
+.Rhistory
+.Rapp.history
+.RData
+.Ruserdata
+.Rproj.user/
+*.Rproj.user
+*.Rcheck/
+
+# Data caches (regenerated on first run)
+data/processed/
+
+# Movebank credentials (never commit)
+.movebank
+movebank_credentials*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Quarto / knitr
+*_files/
+*_cache/
+reports/technical_report.html
+reports/technical_report.pdf

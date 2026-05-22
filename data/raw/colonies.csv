@@ -1,0 +1,10 @@
+colony_id,colony_name,country,flyway,lat,lon,n_birds
+CH_BAD,Baden,Switzerland,western,47.14,8.31,28
+CH_BIE,Biel,Switzerland,western,47.14,7.25,22
+CH_LAU,Lausanne,Switzerland,western,46.52,6.63,18
+CH_LEN,Lenzburg,Switzerland,western,47.39,8.18,14
+CH_LUZ,Luzern,Switzerland,western,47.06,8.31,14
+CH_SOL,Solothurn,Switzerland,western,47.21,7.53,14
+BG_SOF,Sofia,Bulgaria,eastern,42.66,23.36,27
+ES_TAR,Tarragona,Spain,western,41.12,1.25,17
+TR_PIR,Pirasali,Turkey,eastern,36.34,30.53,61

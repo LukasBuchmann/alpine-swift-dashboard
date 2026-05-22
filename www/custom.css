@@ -1,0 +1,368 @@
+/* =============================================================================
+   custom.css - Alpine Swift Dashboard
+   Subdued, scientific look. Figure/ground principle: pale backgrounds,
+   restrained chroma, thematic colour reserved for data.
+   ========================================================================== */
+
+:root {
+  --as-primary:      #1B5E20;
+  --as-primary-dim:  #2e7d32;
+  --as-ink:          #1c2421;
+  --as-muted:        #6c7a6c;
+  --as-bg:           #fbfbfb;
+  --as-panel-bg:     #ffffff;
+  --as-panel-line:   #e6e8e6;
+}
+
+body {
+  background: var(--as-bg);
+  color: var(--as-ink);
+}
+
+/* ---- Navbar ------------------------------------------------------------ */
+.navbar {
+  background-color: var(--as-primary) !important;
+  border-bottom: 1px solid #14471A;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  min-height: 64px;
+  padding-top: .35rem; padding-bottom: .35rem;
+}
+.navbar .navbar-brand,
+.navbar .navbar-brand:hover,
+.navbar .navbar-brand:focus {
+  color: #fff !important;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  display: flex; flex-direction: column;
+  line-height: 1.1;
+}
+.navbar .navbar-brand .navbar-subtitle {
+  font-size: 11.5px;
+  font-weight: 400;
+  opacity: 0.78;
+  letter-spacing: 0.02em;
+}
+.navbar .nav-link {
+  color: rgba(255,255,255,0.82) !important;
+  font-weight: 500;
+}
+.navbar .nav-link:hover,
+.navbar .nav-link:focus {
+  color: #FFFFFF !important;
+}
+.navbar .nav-link.active {
+  color: #FFFFFF !important;
+  border-bottom: 2px solid #FFFFFF;
+}
+.navbar .navbar-toggler {
+  border-color: rgba(255,255,255,0.4);
+}
+
+/* ---- Cards & panel headings ------------------------------------------- */
+.card {
+  border: 1px solid var(--as-panel-line);
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  background: var(--as-panel-bg);
+}
+.card + .card { margin-top: 1rem; }
+.card-header {
+  background: #ffffff;
+  border-bottom: 1px solid #eef0ee;
+  padding: .55rem .9rem;
+}
+.panel-heading {
+  color: var(--as-primary);
+  font-weight: 600;
+  font-size: .98rem;
+  letter-spacing: 0.01em;
+}
+.panel-subheading {
+  color: var(--as-primary-dim);
+  font-weight: 600;
+  font-size: .85rem;
+  margin: 0 0 .25rem 0;
+  letter-spacing: 0.01em;
+  text-transform: none;
+}
+
+/* ---- Sidebar ----------------------------------------------------------- */
+.bslib-sidebar-layout > .sidebar {
+  background: #f4f6f4;
+  border-right: 1px solid #e3e6e3;
+}
+.filter-heading {
+  color: var(--as-primary);
+  font-weight: 600;
+  margin-bottom: .35rem;
+}
+
+/* Picker / inputs - tighter spacing */
+.form-group, .shiny-input-container {
+  margin-bottom: .65rem !important;
+}
+.help-block, .small, .text-muted {
+  color: var(--as-muted);
+}
+
+/* Data-source banner ----------------------------------------------------- */
+.data-source-block { margin-top: .25rem; }
+.data-source {
+  padding: .35rem .55rem;
+  border-radius: 6px;
+  background: #ffffff;
+  border: 1px solid var(--as-panel-line);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+.data-source.data-source-real  { border-left: 3px solid #2e7d32; }
+.data-source.data-source-synth { border-left: 3px solid #d18b00; }
+.src-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+.src-dot-green { background: #2e7d32; box-shadow: 0 0 0 2px rgba(46,125,50,0.20); }
+.src-dot-amber { background: #d18b00; box-shadow: 0 0 0 2px rgba(209,139,0,0.20); }
+
+/* ---- Map --------------------------------------------------------------- */
+.map-wrap { position: relative; }
+.leaflet-container {
+  background: #f1f3f1;
+  border-radius: 6px;
+}
+.leaflet-control-attribution {
+  font-size: 9px;
+  opacity: 0.75;
+}
+
+/* Custom legend (HTML control top-right) -------------------------------- */
+.map-legend {
+  background: rgba(255,255,255,0.95);
+  padding: 8px 10px 6px;
+  border-radius: 6px;
+  border: 1px solid #d5d7d5;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--as-ink);
+  min-width: 130px;
+}
+.map-legend .legend-title {
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--as-primary);
+  margin-bottom: 4px;
+}
+.map-legend .legend-row {
+  display: flex; align-items: center;
+  margin: 2px 0;
+}
+.map-legend .legend-swatch {
+  display: inline-block;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  margin-right: 7px;
+  flex-shrink: 0;
+}
+.map-legend .legend-swatch.legend-ring {
+  background: transparent;
+  border: 2px solid #222;
+}
+.map-legend hr {
+  margin: 5px 0;
+  border: none;
+  border-top: 1px solid #d5d7d5;
+}
+
+/* Layers control - tone down */
+.leaflet-control-layers {
+  font-size: 11.5px !important;
+  border-radius: 6px !important;
+}
+
+/* Status hint under map */
+.map-overlay {
+  position: absolute;
+  bottom: 8px;
+  right: 14px;
+  background: rgba(255,255,255,0.92);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  color: #555;
+  pointer-events: none;
+  z-index: 500;
+  border: 1px solid var(--as-panel-line);
+}
+
+/* ---- Value boxes ------------------------------------------------------- */
+.bslib-value-box {
+  border-radius: 8px !important;
+}
+.bslib-value-box .value-box-value {
+  font-size: 1.45rem !important;
+  font-weight: 600;
+}
+
+/* ---- Quick-filter buttons --------------------------------------------- */
+.quick-filters {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.qf-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 4px 6px;
+  font-size: 11px;
+  background: #ffffff;
+  border: 1px solid #cfd1cf;
+  border-radius: 4px;
+  color: var(--as-primary);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+.qf-btn:hover, .qf-btn:focus {
+  background: #f0f4f0;
+  border-color: var(--as-primary);
+  color: var(--as-primary);
+  box-shadow: none;
+}
+.qf-btn:active {
+  background: var(--as-primary) !important;
+  color: #fff !important;
+}
+
+.anim-counter {
+  margin-top: 8px;
+  font-size: 10.5px;
+  font-style: italic;
+}
+
+/* ---- Animation controls (Play / Reset / slider / readout) --------------- */
+.anim-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+  padding: 6px 12px;
+  background: #f4f6f4;
+  border: 1px solid var(--as-panel-line);
+  border-radius: 6px;
+}
+.anim-play-btn {
+  flex: 0 0 auto;
+  min-width: 92px;
+  padding: 5px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  background: var(--as-primary);
+  color: #fff !important;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.anim-play-btn:hover, .anim-play-btn:focus {
+  background: var(--as-primary-dim);
+  color: #fff !important;
+}
+.anim-reset-btn {
+  flex: 0 0 auto;
+  padding: 5px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid var(--as-primary);
+  background: #ffffff;
+  color: var(--as-primary) !important;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.anim-reset-btn:hover, .anim-reset-btn:focus {
+  background: #f0f4f0;
+  border-color: var(--as-primary-dim);
+  color: var(--as-primary-dim) !important;
+}
+.anim-slider-wrap {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.anim-slider-wrap .shiny-input-container,
+.anim-slider-wrap .form-group {
+  margin: 0 !important;
+}
+.anim-slider-wrap .irs {
+  margin-top: 4px;
+}
+.anim-scrub-readout {
+  flex: 0 0 auto;
+  min-width: 130px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  color: var(--as-ink);
+  letter-spacing: 0.01em;
+}
+
+/* ---- Animation tab ----------------------------------------------------- */
+.anim-date-box {
+  background: var(--as-primary);
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: .5rem;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.anim-date-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.80;
+}
+.anim-date-value {
+  font-size: 1.45rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+/* Make the irs slider primary green */
+.irs--shiny .irs-bar,
+.irs--shiny .irs-from,
+.irs--shiny .irs-to,
+.irs--shiny .irs-single {
+  background: var(--as-primary) !important;
+  border-color: var(--as-primary) !important;
+}
+
+/* ---- About page polish ------------------------------------------------- */
+.about-wrap h2 { font-size: 1.45rem; color: var(--as-primary); margin-top: 1.25rem; }
+.about-wrap h3 { font-size: 1.10rem; color: var(--as-primary-dim); margin-top: 1.0rem; }
+.about-wrap p, .about-wrap li { line-height: 1.55; }
+.about-wrap code {
+  background: #eef2ee;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 90%;
+}
+
+/* ---- Footer ------------------------------------------------------------ */
+.app-footer {
+  text-align: center;
+  padding: 0.8rem;
+  font-size: 11.5px;
+  color: var(--as-muted);
+  border-top: 1px solid var(--as-panel-line);
+  margin-top: 1.25rem;
+  background: #ffffff;
+}
+.app-footer span + span::before {
+  content: " ";
+}
