@@ -52,8 +52,8 @@ suppressPackageStartupMessages({
   library(dplyr); library(ggplot2); library(readr); library(sf)
   library(lubridate); library(scales); library(viridisLite)
 })
-COUNTRY_COLORS <- c(Switzerland = "#0072B2", Spain = "#D55E00",
-                    Bulgaria   = "#009E73", Turkey = "#CC79A7")
+COUNTRY_COLORS <- c(Switzerland = "#1B9E77", Spain = "#D95F02",
+                    Bulgaria   = "#7570B3", Turkey = "#E7298A")
 ```
 
 # Dashboard context and goals
@@ -130,35 +130,46 @@ positional uncertainty that balloons near equinoxes.
 
 # Storytelling concept
 
-The dashboard is built around three nested questions, each surfaced by
-a distinct visual:
+Following Slocum et al.'s argument that static and animated cartography
+sit on a continuum rather than in separate panels, the dashboard
+collapses both into a single integrated map. The user opens the page
+with every filtered fix visible at full opacity (the "static overview")
+and can press **Play** to watch the same data unfold in time. The page
+is built around three nested questions, each surfaced by a distinct
+visual:
 
 1. **Do birds from different colonies travel to different places?**
    The main map answers this on a subdued CartoDB Positron basemap on
-   which thematic symbols dominate. Daily fixes are coloured by
-   country, the breeding colonies are highlighted with size-encoded
-   ring markers, and a togglable migration-density heatmap visualises
-   the corridor structure of the two Saharan flyways using a
-   perceptually uniform viridis ramp.
+   which thematic symbols dominate. Hourly-interpolated fixes are
+   coloured by the active *Color by* setting (country, colony, flyway,
+   or year). Breeding colonies are highlighted with size-encoded ring
+   markers (symbol area ∝ number of birds), and click popups expose
+   per-fix metadata (bird id, year, date, phase).
 
 2. **How does breeding latitude shape the annual cycle?** The linked
-   phenology panel plots **latitude as a function of day-of-year** for
-   every bird-year — a classical signature plot in migration ecology —
-   and a **breeding-stay-vs-breeding-latitude** scatter that
-   reproduces the central quantitative finding of Meier et al. 2020.
+   **latitude × day-of-year** plot below the map is a classical
+   signature plot in migration ecology. Each line is one continuous
+   tracking-burst segment of a single bird-year (breaks at gaps >14 d);
+   steep descents in autumn show the trans-Saharan crossing, ascents in
+   spring the return.
 
-3. **What does this look like in motion?** The animated map (Phase 2)
-   replays the year a day at a time, with a faint backdrop of every
-   filtered fix providing a constant geographic frame of reference and
-   a bright trail layer that pulses around the slider value.
+3. **What does this look like in motion?** Pressing Play dims the
+   backdrop and overlays bright dots at each bird-year's interpolated
+   position for the slider's day-of-year. A togglable *sperm trail*
+   draws the last 12 / 24 / 72 h of each bird as a fading polyline,
+   making the speed of the crossing visceral. Reset returns to the
+   static overview.
 
 Filters in the sidebar drive every component reactively. Single-click
 quick-filter buttons (**All / W flyway / E flyway / Clear**) select the
 most analytically meaningful groupings; the picker beneath them offers
-per-colony fine-grained control. A "Color by" radio re-keys every
-legend in the app (country / colony / flyway) without changing what is
-on screen — a separation between data identity and visual encoding
-that is consistent with [@slocum2009 ch. 14].
+per-colony fine-grained control. A "Color by" radio (Country / Colony
+/ Flyway / Year) re-keys every legend in the app without changing
+**which** points are on screen — a separation between data identity
+and visual encoding consistent with [@slocum2009 ch. 14]. To keep that
+separation honest, the down-sampling step that picks the visible 8 000
+rows uses a fixed seed: changing Color by recolours the same points
+rather than shuffling the visible subset.
 
 # Cartographic decisions
 
@@ -369,9 +380,37 @@ iterations and a first pass of this report were produced with the
 assistance of an Anthropic Claude model (Claude Opus). All generated
 code was reviewed line-by-line before commit; the cartographic
 choices, the storytelling structure, and the selection of the Phase-2
-extension are the author's own. Biological framing draws on Meier et
+extension are the authors' own. Biological framing draws on Meier et
 al. 2020 and is cited accordingly; no text from the source paper is
 reproduced verbatim.
+
+## Cartographic and scientific compliance
+
+The dashboard was built against two reference texts and kept aligned
+with both throughout development:
+
+* **Slocum, McMaster, Kessler & Howard (2009)** —
+  *Thematic Cartography and Geovisualization* (3rd ed.). Applied
+  principles: figure / ground via a low-chroma Positron basemap
+  (ch.12), qualitative ColorBrewer "Dark2" for nominal data and
+  sequential YlGnBu for the ordinal *Year* channel (ch.14),
+  area-proportional symbol sizing for colony markers (ch.14),
+  configurable playback pacing and persistent date readout for the
+  animation (ch.21–22), and an integrated rather than two-panel
+  static/animated map (ch.22).
+
+* **Meier et al. (2020)**, *J. Avian Biology* — the source paper. The
+  dashboard reads the four-population gradient (TR / ES / BG / CH),
+  the burst-by-burst tracking structure, and the published `comments`
+  phase classification (*breeding site* / *non-breeding site* /
+  *migration*) directly from the Movebank Data Repository CSVs. The
+  Tropic of Cancer dashed line at 23.4366 °N matches the boundary
+  used in the paper's Methods to separate breeding from non-breeding
+  sites. Linear interpolation between consecutive daily medians is
+  only applied **within tracking bursts** (gaps ≤14 d), so multi-week
+  geolocator dropouts remain visibly empty rather than being bridged
+  by straight lines — staying inside the positional-uncertainty
+  envelope cited in the paper.
 
 # References {.unnumbered}
 

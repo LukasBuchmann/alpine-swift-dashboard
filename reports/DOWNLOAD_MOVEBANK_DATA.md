@@ -1,8 +1,10 @@
 # How to load real Movebank data
 
-This dashboard uses synthetic tracks by default so it runs immediately.
-To swap in **real** geolocator data from the published Movebank Data
-Repository (MDR), follow the steps below — no R code changes required.
+The dashboard auto-detects real Movebank CSVs in `data/raw/movebank/`.
+When that folder is empty (or missing), it transparently falls back to
+the bundled synthetic dataset. **No code changes are required to swap
+between the two sources** — the sidebar's "Data source" banner shows
+which is active.
 
 ## What's openly available vs. not
 
@@ -18,11 +20,11 @@ Repository (MDR), follow the steps below — no R code changes required.
 | Bulgaria (E flyway) | Sofia | not on MDR | Movebank account + permission |
 | Turkey (E flyway) | Pırasalı | not on MDR | Movebank account + permission |
 
-The **six MDR-public colonies cover ~127 of the 215 birds in Meier et al.
-2020** and include the entire western flyway. The dashboard's storytelling
-is already complete with these — the latitudinal gradient is fully
-represented (Spain 41 °N, Switzerland 46–47 °N). For the eastern flyway,
-the synthetic fallback fills in until permission is granted.
+The six MDR-public colonies cover ~127 of the 215 birds in Meier et al.
+2020 and include the entire western flyway. With those alone the
+latitudinal gradient is fully represented (Spain 41 °N → Switzerland
+46–47 °N). For the eastern flyway, the synthetic fallback fills in
+until you have access.
 
 ## Easiest path: manual download
 
@@ -39,23 +41,24 @@ the synthetic fallback fills in until permission is granted.
 
 ### Step 2 — accept the licence
 
-Each page has a Creative Commons licence notice and a "Download dataset"
-button (or per-file download links). Click through and download **only
-the `tracks.csv` file** for each colony — that's the one the dashboard
-reads.
+Each page has a Creative Commons licence notice and a download button.
+Click through and download **only the `tracks.csv` file** for each
+colony — that's the one the dashboard reads.
 
-Skip these (they're huge and not needed):
+Skip these (huge and not needed):
 - `light-levels.csv` (50–350 MB raw light readings)
 - `twilights.csv` (intermediate Hill–Ekström output)
 - `barometer.csv` (only on a few colonies)
 
-You do **not** need a Movebank account for these MDR-public datasets.
+You do **not** need a Movebank account for these MDR-public datasets;
+clicking through the Creative Commons licence on the dataset page is
+enough.
 
 ### Step 3 — place the files
 
-Create the folder `data/raw/movebank/` in the project and drop the CSVs
-in. Rename them to make the colony obvious — the loader detects colony
-from either the file's `study-name` column or the filename:
+Create the folder `data/raw/movebank/` and drop the CSVs in. The loader
+identifies the colony from either the file's `study-name` column or its
+filename, so the suggested naming pattern is:
 
 ```
 data/raw/movebank/
@@ -67,56 +70,44 @@ data/raw/movebank/
 └── Spain_Tarragona-tracks.csv
 ```
 
-(Underscore vs. space doesn't matter; the loader uses case-insensitive
-substring matching against `Switzerland Baden`, `Spain Tarragona`, etc.)
+Underscore vs. space doesn't matter; matching is case-insensitive
+substring against `Switzerland Baden`, `Spain Tarragona`, etc.
 
 ### Step 4 — rebuild the cache and launch
 
-In the R console:
-
 ```r
-# In the project root
 unlink("data/processed/tracks_processed.rds")   # invalidate cache
-source("R/data_acquisition.R")
-source("R/data_processing.R")
-build_processed_data(force = TRUE)
-shiny::runApp()
+shiny::runApp()                                  # auto-rebuilds on launch
 ```
 
-The startup banner should now read:
+The first launch after adding new files takes ~30–60 s while the
+burst-aware hourly interpolation table is computed. The sidebar's
+"Data source" banner should switch from amber ("Synthetic") to green
+("Real Movebank Data Repository — *N* colonies, *M* birds").
 
-> Using REAL Movebank Data Repository tracks.
+## Alternative: live Movebank API (for the missing colonies)
 
-…instead of the synthetic one. The dashboard will derive annual-cycle
-phase (breeding / migration / wintering) automatically from each fix's
-position relative to the breeding colony.
+To add Luzern (CH), Sofia (BG), or Pırasalı (TR) you need a free
+Movebank account at <https://www.movebank.org/> and per-study download
+permission from the Swiss Ornithological Institute (usually granted
+to academic requests within a few days). Once approved:
 
-## Alternative: live Movebank API
+```r
+library(move)
+movebankLogin(username = "your_user", password = "your_pass")
+study <- getMovebankData(study = "Sofia - Long term study...",
+                         login = movebankLogin())
+write.csv(as.data.frame(study),
+          "data/raw/movebank/Bulgaria_Sofia-tracks.csv",
+          row.names = FALSE)
+```
 
-For the missing eastern-flyway colonies (Bulgaria, Turkey, Luzern):
-
-1. Register a free Movebank account at <https://www.movebank.org/>.
-2. Find each study (search title "Long term study on migratory movement
-   of Alpine swifts"). Click "Request access" and accept the licence.
-3. The Swiss Ornithological Institute usually approves academic requests
-   within a few days.
-4. Once approved, in R:
-
-   ```r
-   library(move)
-   movebankLogin(username = "your_user", password = "your_pass")
-   study <- getMovebankData(study = "Sofia - Long term study...",
-                            login = movebankLogin())
-   df <- as.data.frame(study)
-   write.csv(df, "data/raw/movebank/Bulgaria_Sofia-tracks.csv",
-             row.names = FALSE)
-   ```
+Then repeat **Step 4** to rebuild the cache.
 
 ## Recommendation
 
-For an academic deliverable due in two weeks, the **manual MDR download
-of the six public colonies is the fastest and fully sufficient** path.
-The synthetic eastern-flyway data is clearly labelled in the report and
-its presence is scientifically defensible because the assignment
-explicitly allows for data-quality compromises so long as they are
-documented.
+For an academic deliverable, the six MDR-public colonies are
+sufficient — the western flyway is fully populated, the latitudinal
+gradient is intact, and the eastern-flyway synthetic backfill is
+clearly documented in the report. Add the live-API colonies only if
+you receive access in time.

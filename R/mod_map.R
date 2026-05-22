@@ -6,7 +6,6 @@
 #   - Subdued Positron basemap (figure/ground).
 #   - Thematic symbols dominate: alpha-blended circles for tracking points,
 #     ringed circles sized by sample-size for breeding colonies.
-#   - Sequential viridis heatmap for migration-phase density (NEVER rainbow).
 #   - Legend rendered as a top-right HTML control with the active grouping.
 #   - Map fitted to the trans-Saharan migration extent on first render.
 # =============================================================================
@@ -44,34 +43,15 @@ map_server <- function(id, filtered, processed) {
                   lng2 = MAP_BOUNDS$lng2, lat2 = MAP_BOUNDS$lat2) %>%
         addScaleBar(position = "bottomleft",
                     options = scaleBarOptions(imperial = FALSE)) %>%
-        # Tropic of Cancer line - cartographic landmark separating breeding
-        # range from wintering range (the swifts cross this every year).
-        addPolylines(
-          lng = c(MAP_BOUNDS$lng1 - 5, MAP_BOUNDS$lng2 + 5),
-          lat = c(23.4366, 23.4366),
-          color = "#888", weight = 1, opacity = 0.6, dashArray = "4,4",
-          group = "Tropic of Cancer"
-        ) %>%
-        addLabelOnlyMarkers(
-          lng = MAP_BOUNDS$lng2 - 4, lat = 24.4,
-          label = "Tropic of Cancer",
-          group = "Tropic of Cancer",
-          labelOptions = labelOptions(
-            noHide = TRUE, direction = "left", textOnly = TRUE,
-            style = list(color = "#777", "font-size" = "10px",
-                         "font-style" = "italic"))
-        ) %>%
         addLayersControl(
-          overlayGroups = c("Tracking points", "Density",
-                            "Colonies", "Tropic of Cancer"),
+          overlayGroups = c("Tracking points",
+                            "Colonies"),
           options = layersControlOptions(collapsed = FALSE,
                                          autoZIndex = TRUE)
-        ) %>%
-        hideGroup("Density")   # off by default - keep map clean
+        )
     })
 
-    # ----- Tracking points + density (filter-reactive) --------------------
-    # ----- Tracking points + density (filter-reactive) --------------------
+    # ----- Tracking points (filter-reactive) --------------------
     observe({
       # 1. Pull the high-resolution hourly data stream
       df <- filtered$hourly()
@@ -79,7 +59,6 @@ map_server <- function(id, filtered, processed) {
       proxy <- leafletProxy(ns("map"))
       
       proxy %>% clearGroup("Tracking points") %>%
-                clearGroup("Density") %>%
                 removeControl("legend")
 
       if (is.null(df) || nrow(df) == 0) return()
@@ -125,17 +104,6 @@ map_server <- function(id, filtered, processed) {
         )
       )
 
-      # Density heatmap with viridis gradient
-      mig <- dplyr::filter(df, phase == "migration")
-      if (nrow(mig) > 50) {
-        proxy %>% addHeatmap(
-          data = mig, lng = ~lon, lat = ~lat,
-          blur = 22, radius = 14, max = 0.05,
-          gradient = HEATMAP_GRADIENT,
-          group = "Density"
-        )
-      }
-
       # Legend
       legend_html <- render_map_legend(
         pal,
@@ -178,7 +146,7 @@ map_server <- function(id, filtered, processed) {
     # ----- Status banner --------------------------------------------------
     output$hint <- renderText({
       n <- nrow(filtered$hourly())
-      sprintf("Showing %s hourly tracking intervals - layer-control top-right toggles migration point density.",
+      sprintf("Showing %s hourly tracking intervals - layer-control top-right toggles migration points.",
               fmt_int(n))
     })
 

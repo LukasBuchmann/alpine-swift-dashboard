@@ -55,10 +55,23 @@ ui <- page_navbar(
   ),
   theme = swift_theme,
   fillable = FALSE,
-  header = tags$head(
-    tags$link(rel = "stylesheet", type = "text/css", href = "custom.css"),
-    tags$meta(name = "viewport",
-              content = "width=device-width, initial-scale=1.0")
+  header = tagList(
+    tags$head(
+      tags$link(rel = "stylesheet", type = "text/css", href = "custom.css"),
+      tags$meta(name = "viewport",
+                content = "width=device-width, initial-scale=1.0"),
+      # ---- First-load overlay: visible until Shiny finishes initial work ----
+      tags$script(HTML(
+        "$(document).on('shiny:idle', function() {",
+        "  var el = document.getElementById('init-loader');",
+        "  if (el) { el.classList.add('fade-out');",
+        "            setTimeout(function(){ el.remove(); }, 600); }",
+        "});"))
+    ),
+    tags$div(id = "init-loader", class = "init-loader",
+             tags$div(class = "init-loader-spinner"),
+             tags$div(class = "init-loader-text",
+                      "Loading Alpine Swift tracks…"))
   ),
 
   # ---- Sidebar (global filters) ----

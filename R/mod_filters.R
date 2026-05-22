@@ -144,6 +144,18 @@ filters_server <- function(id, processed) {
     filtered_hourly <- reactive({ scope_data_hourly() })
     filtered_hourly_anim <- reactive({ scope_data_hourly() })
 
+    # Pre-computed 6h-subsampled animation table (filter-reactive only)
+    scope_data_hourly_thin <- reactive({
+      req(processed$hourly_thin)
+      df <- processed$hourly_thin
+      sel <- input$country
+      if (is.null(sel) || length(sel) == 0) {
+        return(df[0, , drop = FALSE])
+      }
+      df |> dplyr::filter(colony_name %in% sel, year %in% sel_years())
+    })
+    filtered_hourly_thin_anim <- reactive({ scope_data_hourly_thin() })
+
     # =========================================================================
     # PHENOLOGY SUMMARY REACTIVES
     # =========================================================================
@@ -161,13 +173,14 @@ filters_server <- function(id, processed) {
     })
 
     list(
-      daily       = filtered_daily,
-      daily_anim  = filtered_daily_anim,
-      hourly      = filtered_hourly,       
-      hourly_anim = filtered_hourly_anim,  
-      phenology   = filtered_phenology,
-      years       = sel_years,
-      group_mode  = reactive(input$group_mode)
+      daily            = filtered_daily,
+      daily_anim       = filtered_daily_anim,
+      hourly           = filtered_hourly,
+      hourly_anim      = filtered_hourly_anim,
+      hourly_thin_anim = filtered_hourly_thin_anim,
+      phenology        = filtered_phenology,
+      years            = sel_years,
+      group_mode       = reactive(input$group_mode)
     )
   })
 }

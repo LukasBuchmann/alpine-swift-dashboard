@@ -11,7 +11,7 @@ suppressPackageStartupMessages({
 metrics_ui <- function(id) {
   ns <- NS(id)
   layout_columns(
-    fill = FALSE, col_widths = c(3, 3, 3, 3),
+    fill = FALSE, col_widths = c(4, 4, 4),
     value_box(title = "Individuals tracked",
               value = textOutput(ns("n_birds")),
               showcase = bsicons::bs_icon("binoculars"),
@@ -23,11 +23,7 @@ metrics_ui <- function(id) {
     value_box(title = "Populations / colonies",
               value = textOutput(ns("n_pops")),
               showcase = bsicons::bs_icon("diagram-3"),
-              theme  = "success"),
-    value_box(title = "Median breeding stay",
-              value = textOutput(ns("med_stay")),
-              showcase = bsicons::bs_icon("calendar-week"),
-              theme  = "primary")
+              theme  = "success")
   )
 }
 
@@ -43,11 +39,6 @@ metrics_server <- function(id, filtered) {
       n_country <- length(unique(filtered$daily()$country))
       n_colony  <- length(unique(filtered$daily()$colony_id))
       sprintf("%d / %d", n_country, n_colony)
-    })
-    output$med_stay <- renderText({
-      v <- filtered$phenology()$length_of_stay_breeding
-      v <- v[!is.na(v) & is.finite(v) & v > 30]
-      if (length(v) == 0) "-" else sprintf("%d days", as.integer(median(v)))
     })
   })
 }

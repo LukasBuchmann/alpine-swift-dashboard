@@ -176,10 +176,26 @@ build_processed_data <- function(force = FALSE) {
     dplyr::summarise(n_birds = dplyr::n_distinct(bird_id),
                      n_fixes = dplyr::n(), .groups = "drop")
 
+  # -------------------------------------------------------------------------
+  # 6-hour subsample of hourly: the animation lookup table.
+  # Pre-computed ONCE at preprocessing time so per-frame work in the
+  # animation server drops to a simple integer filter.
+  # -------------------------------------------------------------------------
+  message("Building 6-hour animation lookup table (hourly_thin)...")
+  hourly_thin <- hourly %>%
+    dplyr::mutate(.hod = as.integer(lubridate::hour(timestamp))) %>%
+    dplyr::filter(.hod %% 6L == 0L) %>%
+    dplyr::mutate(
+      hoy = (as.integer(doy) - 1L) * 24L + .hod
+    ) %>%
+    dplyr::select(-.hod) %>%
+    dplyr::arrange(bird_id, year, hoy)
+
   out <- list(
     tracks_raw     = tracks,
     daily          = daily,
-    hourly         = hourly, 
+    hourly         = hourly,
+    hourly_thin    = hourly_thin,
     phenology      = phenology,
     colonies       = src$colonies,
     reference      = src$reference,

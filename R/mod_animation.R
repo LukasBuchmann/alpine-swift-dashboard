@@ -29,7 +29,7 @@ animation_ui <- function(id) {
         full_screen = TRUE,
         leafletOutput(ns("anim_map"), height = "65vh"),
         div(class = "small text-muted px-2 pt-2",
-            "Top-right of the map: toggle Tracking points / Density / Colony residence. Click any point for details.")
+            "Top-right of the map: toggle Tracking points / Colony residence. Click any point for details.")
       ),
       
       card(
@@ -139,15 +139,14 @@ animation_server <- function(id, filtered, processed) {
       if (is.null(v) || is.na(v)) 100 else as.numeric(v)
     }) |> shiny::throttle(400)
 
-    # ---- Indexed hourly stream ---------------------------------------------
+    # ---- Animation lookup: pre-computed 6h-subsampled hourly_thin ----------
+    # Built ONCE at data_processing time (processed$hourly_thin). Per-frame
+    # work is now a single integer-window filter, no row-wise computation.
     hourly_indexed <- reactive({
-      df <- filtered$hourly_anim()
+      df <- filtered$hourly_thin_anim()
       if (is.null(df) || nrow(df) == 0) return(NULL)
-      
-      df <- df |> dplyr::filter(!is.na(lat), !is.na(lon), !is.na(timestamp))
+      df <- df |> dplyr::filter(!is.na(lat), !is.na(lon))
       if (nrow(df) == 0) return(NULL)
-      
-      df$hoy <- (as.integer(df$doy) - 1L) * 24L + as.integer(lubridate::hour(df$timestamp))
       df
     })
 
@@ -208,15 +207,6 @@ animation_server <- function(id, filtered, processed) {
         addTiles(urlTemplate = BASEMAP_URL, attribution = BASEMAP_ATTR, options = tileOptions(opacity = 0.9)) |>
         fitBounds(lng1 = MAP_BOUNDS$lng1, lat1 = MAP_BOUNDS$lat1, lng2 = MAP_BOUNDS$lng2, lat2 = MAP_BOUNDS$lat2) |>
         addScaleBar(position = "bottomleft", options = scaleBarOptions(imperial = FALSE)) |>
-        addPolylines(
-          lng = c(MAP_BOUNDS$lng1 - 5, MAP_BOUNDS$lng2 + 5), lat = c(23.4366, 23.4366),
-          color = "#888", weight = 1, opacity = 0.6, dashArray = "4,4", group = "Tropic of Cancer"
-        ) |>
-        addLabelOnlyMarkers(
-          lng = MAP_BOUNDS$lng2 - 4, lat = 24.4, label = "Tropic of Cancer", group = "Tropic of Cancer",
-          labelOptions = labelOptions(noHide = TRUE, direction = "left", textOnly = TRUE,
-            style = list(color = "#777", "font-size" = "10px", "font-style" = "italic"))
-        ) |>
         addCircleMarkers(
           data = cs, lng = ~lon, lat = ~lat,
           radius = ~sqrt(n_birds) * 1.8 + 4, weight = 1.6, color = "#222",
@@ -225,10 +215,9 @@ animation_server <- function(id, filtered, processed) {
           popup = ~sprintf("<b>%s</b><br/>%s &middot; %s flyway<br/>n = %d birds", htmltools::htmlEscape(colony_name), htmltools::htmlEscape(country), htmltools::htmlEscape(flyway), n_birds)
         ) |>
         addLayersControl(
-          overlayGroups = c("Tracking points", "Density", "Colony residence", "Tropic of Cancer"),
+          overlayGroups = c("Tracking points", "Colony residence"),
           options = layersControlOptions(collapsed = FALSE, autoZIndex = TRUE)
-        ) |>
-        hideGroup("Density")
+        )
     })
 
     # ---- Dynamic Legend Setup ----------------------------------------------
@@ -247,7 +236,7 @@ animation_server <- function(id, filtered, processed) {
     # ---- Tracking Points & Trails (Handles Overview vs Animation) ----------
     observe({
       proxy <- leafletProxy(ns("anim_map"))
-      proxy |> clearGroup("Tracking points") |> clearGroup("Density")
+      proxy |> clearGroup("Tracking points")
 
       df_idx <- hourly_indexed()
       gm     <- filtered$group_mode()
@@ -260,18 +249,24 @@ animation_server <- function(id, filtered, processed) {
       # =======================================================================
       if (identical(mode, "overview")) {
         pal <- resolve_palette(df_idx, gm)
-        
+
         bg <- df_idx
         bg$col <- pal$col
 
-        n_max <- 8000L
-        if (nrow(bg) > n_max) bg <- bg[sample(nrow(bg), n_max), ]
+        # Overview mode: show EVERY filtered fix (no sampling). A hard
+        # ceiling of 60k keeps Leaflet's canvas happy on slow machines;
+        # below that, every point is drawn.
+        n_max <- 60000L
+        if (nrow(bg) > n_max) {
+          set.seed(2026L)
+          bg <- bg[sample(nrow(bg), n_max), ]
+        }
 
         proxy |> addCircleMarkers(
           data = bg, lng = ~lon, lat = ~lat, 
           radius = ~ifelse(phase == "migration", 3.2, 2.4),
           color = ~col, fillColor = ~col, stroke = FALSE, 
-          fillOpacity = 0.40, group = "Tracking points",
+          fillOpacity = 0.28, group = "Tracking points",
           popup = ~sprintf("<b>%s</b> &middot; %s<br/>Bird: <code>%s</code> (yr %s)<br/>%s &middot; %s", 
                            htmltools::htmlEscape(colony_name), htmltools::htmlEscape(country), 
                            htmltools::htmlEscape(bird_id), htmltools::htmlEscape(as.character(year)), 
@@ -302,19 +297,6 @@ animation_server <- function(id, filtered, processed) {
                            format(date, "%Y-%m-%d"), stage_label(phase))
         )
         
-        # 2. Plot Density Heatmap ONLY for actively migrating birds
-        # Adjusted settings for MAXIMUM visibility of low numbers of tracking points
-        mig <- dplyr::filter(cur, phase == "migration")
-        if (nrow(mig) > 0) {
-          proxy |> addHeatmap(
-            data = mig, lng = ~lon, lat = ~lat, 
-            blur = 28,          # Increased blur to spread the color out
-            radius = 35,        # Substantially larger footprint per bird
-            max = 0.1,          # Much lower threshold: turns red/purple with very few points
-            minOpacity = 0.4,   # Ensures the outer edges are still visible
-            gradient = HEATMAP_GRADIENT, group = "Density"
-          )
-        }
       }
 
       # 3. Process Sperm Trails

@@ -24,55 +24,35 @@ suppressPackageStartupMessages({
 # Bulgaria    = deep purple (eastern, contrasts with CH/ES)
 # Turkey      = burnt sienna (eastern, distinct from BG, less saturated than
 #               the previous magenta which was too aggressive for science viz)
+# ColorBrewer "Dark2" - the canonical qualitative palette Slocum (ch.14)
+# recommends for nominal categorical data. Colour-blind-tested, print-safe.
 COUNTRY_COLORS <- c(
-  "Switzerland" = "#0072B2",   # deep blue
-  "Spain"       = "#D55E00",   # vermilion
-  "Bulgaria"    = "#009E73",   # bluish-green
-  "Turkey"      = "#CC79A7"    # pink (Okabe-Ito), less saturated
+  "Switzerland" = "#1B9E77",   # Dark2-1 teal
+  "Spain"       = "#D95F02",   # Dark2-2 orange
+  "Bulgaria"    = "#7570B3",   # Dark2-3 purple
+  "Turkey"      = "#E7298A"    # Dark2-4 magenta
 )
 
-# Flyway: 2 categories - blue (W) vs orange (E)
+# Flyway: ColorBrewer "Set2" first two
 FLYWAY_COLORS <- c(
-  "western" = "#0072B2",
-  "eastern" = "#D55E00"
+  "western" = "#66C2A5",
+  "eastern" = "#FC8D62"
 )
 
-# Year: 3 categories, sequential viridis (years are ordinal). Older = darker.
+# Year: ColorBrewer "YlGnBu" 3-step (sequential, Slocum ch.14 - ordinal data
+# needs a sequential ramp, not a qualitative one).
 YEAR_COLORS <- c(
-  "2014" = "#440154",   # viridis dark purple
-  "2015" = "#21918C",   # viridis teal
-  "2016" = "#FDE725"    # viridis yellow
+  "2014" = "#EDF8B1",
+  "2015" = "#7FCDBB",
+  "2016" = "#2C7FB8"
 )
 
-# Phase colors (nominal, but consistent with annual-cycle order)
-PHASE_COLORS <- c(
-  "breeding"   = "#1B7837",   # forest green
-  "migration"  = "#E08214",   # amber (transit)
-  "wintering"  = "#542788"    # deep purple (residence in tropics)
-)
-
-# Sequential ramp for density / time / count
-SEQ_RAMP <- function(n = 9, option = "viridis") {
-  viridisLite::viridis(n, option = option, direction = 1, end = 0.95)
-}
-
-# Heatmap gradient: leaflet.extras::addHeatmap wraps a *character vector*
-# of colors with colorNumeric internally, so we pass it as such.
-# Viridis sequence (light yellow -> dark purple) - perceptually uniform,
-# colorblind-safe. NEVER spectral / rainbow.
-HEATMAP_GRADIENT <- c("#FDE725", "#7AD151", "#22A884",
-                      "#2A788E", "#414487", "#440154")
-
-# Subdued base map (CartoDB Positron) - pale grey, low chroma
+# Subdued base map (CartoDB Positron) - pale grey, low chroma.
 BASEMAP_URL <- "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
 BASEMAP_ATTR <- paste0(
   "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> ",
   "contributors &copy; <a href=\"https://carto.com/attributions\">CARTO</a>"
 )
-
-# Optional darker basemap for the animation tab (better contrast for moving
-# bright symbols on a darker ground - figure/ground principle).
-DARK_BASEMAP_URL <- "https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png"
 
 # Map extent: covers all breeding colonies + entire trans-Saharan migration
 # corridor down to the wintering grounds at 5 N.

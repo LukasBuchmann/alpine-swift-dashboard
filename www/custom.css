@@ -19,6 +19,38 @@ body {
   color: var(--as-ink);
 }
 
+/* ---- First-load overlay (shown once, then removed) -------------------- */
+.init-loader {
+  position: fixed;
+  inset: 0;
+  background: rgba(251, 251, 251, 0.97);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  transition: opacity 0.5s ease;
+}
+.init-loader.fade-out {
+  opacity: 0;
+  pointer-events: none;
+}
+.init-loader-spinner {
+  width: 56px; height: 56px;
+  border: 5px solid #d8e4dc;
+  border-top-color: #1B9E77;
+  border-radius: 50%;
+  animation: ilspin 0.9s linear infinite;
+}
+.init-loader-text {
+  font-size: 14px;
+  color: var(--as-primary);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+@keyframes ilspin { to { transform: rotate(360deg); } }
+
 /* ---- Navbar ------------------------------------------------------------ */
 .navbar {
   background-color: var(--as-primary) !important;
