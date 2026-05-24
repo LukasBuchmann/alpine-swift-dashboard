@@ -1,44 +1,41 @@
 # =============================================================================
-# R/mod_metrics.R - Summary KPI value boxes (top of dashboard)
+# R/mod_metrics.R - Summary KPI strip (lives in the navbar, top-right)
 # =============================================================================
-
 suppressPackageStartupMessages({
   library(shiny)
   library(bslib)
-  library(dplyr)
 })
 
 metrics_ui <- function(id) {
   ns <- NS(id)
-  layout_columns(
-    fill = FALSE, col_widths = c(4, 4, 4),
-    value_box(title = "Individuals tracked",
-              value = textOutput(ns("n_birds")),
-              showcase = bsicons::bs_icon("binoculars"),
-              theme  = "success"),
-    value_box(title = "Daily fixes",
-              value = textOutput(ns("n_fixes")),
-              showcase = bsicons::bs_icon("geo-alt"),
-              theme  = "primary"),
-    value_box(title = "Populations / colonies",
-              value = textOutput(ns("n_pops")),
-              showcase = bsicons::bs_icon("diagram-3"),
-              theme  = "success")
+  div(class = "navbar-metrics",
+      div(class = "navbar-metric",
+          span(class = "navbar-metric-value",
+               textOutput(ns("n_birds"), inline = TRUE)),
+          span(class = "navbar-metric-label", "Individuals tracked")),
+      div(class = "navbar-metric",
+          span(class = "navbar-metric-value",
+               textOutput(ns("n_fixes"), inline = TRUE)),
+          span(class = "navbar-metric-label", "Daily fixes")),
+      div(class = "navbar-metric",
+          span(class = "navbar-metric-value",
+               textOutput(ns("n_pops"), inline = TRUE)),
+          span(class = "navbar-metric-label", "Populations / colonies"))
   )
 }
 
 metrics_server <- function(id, filtered) {
   moduleServer(id, function(input, output, session) {
     output$n_birds <- renderText({
-      fmt_int(length(unique(filtered$daily()$bird_id)))
+      format(length(unique(filtered$daily()$bird_id)), big.mark = " ")
     })
     output$n_fixes <- renderText({
-      fmt_int(nrow(filtered$daily()))
+      format(nrow(filtered$daily()), big.mark = " ")
     })
     output$n_pops <- renderText({
-      n_country <- length(unique(filtered$daily()$country))
-      n_colony  <- length(unique(filtered$daily()$colony_id))
-      sprintf("%d / %d", n_country, n_colony)
+      sprintf("%d / %d",
+              length(unique(filtered$daily()$country)),
+              length(unique(filtered$daily()$colony_id)))
     })
   })
 }

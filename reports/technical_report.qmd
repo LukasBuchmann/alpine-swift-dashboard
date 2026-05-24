@@ -1,27 +1,25 @@
 ---
-title: "Alpine Swift Migration Dashboard — Technical Report"
-subtitle: "CCES FS26 · Interactive Environmental Data Dashboard"
+title: "Alpine Swift Migration Dashboard - Technical Report"
+subtitle: "CCES FS26 - Interactive Environmental Data Dashboard"
 author:
   - name: "Lukas Buchmann"
-    affiliation: "ZHAW · Environmental Science"
-  - name: "Etienne Dürig"
-    
+    affiliation: "ZHAW - Environmental Science"
+  - name: "Etienne Duerig"
+    affiliation: "ZHAW - Environmental Science"
 date: today
 abstract: |
   This report documents an interactive R Shiny dashboard that visualises
   the trans-Saharan migration of the Alpine Swift (*Tachymarptis melba*).
-  Light-level geolocator tracks for 173 individuals from nine colonies
-  across four populations are loaded directly from the Movebank Data
-  Repository. Three coupled views — a Leaflet-based spatial map, two
-  linked phenology plots, and an animated replay of the annual cycle —
-  surface the headline finding of Meier et al. (2020): the eastern and
-  western populations follow geographically distinct flyways across the
-  Sahara and winter in spatially separate regions of tropical Africa,
-  despite indistinguishable migration speeds. Cartographic decisions
-  follow Slocum et al. (*Thematic Cartography and Geovisualization*):
-  perceptually uniform sequential ramps, colour-blind-safe qualitative
-  palettes, figure-ground hierarchy, and an area-faithful representation
-  of the Europe-Africa extent in the static report figures.
+  Light-level geolocator tracks for up to 215 individuals from nine
+  colonies across four populations are loaded directly from the Movebank
+  Data Repository [@movebank]. A single integrated map combines an
+  always-on Path-Resample dot cloud with a server-driven day-of-year
+  animation; the inherent latitudinal uncertainty of light-level
+  geolocators is rendered explicitly as a shadow band around each
+  migration fix. Cartographic and visual-analytic decisions follow
+  @slocum2009, @maceachren1995, @maceachren2004, @cairo2016 and
+  @keim2008. The intended audience is non-specialist birding
+  enthusiasts.
 format:
   html:
     toc: true
@@ -58,161 +56,100 @@ COUNTRY_COLORS <- c(Switzerland = "#1B9E77", Spain = "#D95F02",
 
 # Dashboard context and goals
 
-The Alpine Swift (*Tachymarptis melba*, formerly *Apus melba*) is a small
-aerial insectivore that performs one of the longest non-stop flights
-known among birds. The species can stay airborne for up to 200
-consecutive days outside of the breeding season and is exclusively
-aerial during that time [@meier2020]. Conventional bird-banding can
-say almost nothing about where these birds *go* between September and
-March — yet conserving aerial insectivores in a rapidly warming
-Europe requires precisely that knowledge.
+The Alpine Swift (*Tachymarptis melba*, formerly *Apus melba*) is a small aerial insectivore capable of one of the longest non-stop flights known among birds; individuals can remain airborne for up to 200 consecutive days outside the breeding season, feeding, sleeping and moulting on the wing [@meier2020]. Conventional ring recoveries say almost nothing about where these birds go between September and March, yet conserving aerial insectivores under European climate change requires precisely that knowledge.
 
-Light-level geolocators have made the trans-Saharan annual cycle of
-European-breeding swifts tractable for the first time. The Swiss
-Ornithological Institute has, since 2014, run a coordinated long-term
-study tagging Alpine swifts at four breeding populations along a
-roughly twelve-degree latitudinal gradient: Pırasalı Island
-(Turkey, 36.3 °N), Tarragona (Spain, 41.1 °N), Sofia
-(Bulgaria, 42.7 °N) and six colonies in Switzerland (46–47 °N).
-The headline finding of @meier2020 is that the eastern and western
-populations follow **two geographically distinct flyways** across the
-Sahara — the western pair (Spain + Switzerland) crossing via the
-Iberian Peninsula and Western Sahara, the eastern pair (Bulgaria +
-Turkey) via the Eastern Mediterranean and Egypt — and winter in
-**spatially separate** regions of tropical Africa, even though they
-travel at indistinguishable speeds (median 6.2 d outbound, 8.7 d
-return). Length of stay at the breeding site is negatively correlated
-with breeding latitude and differs by more than a month between
-populations.
+Light-level geolocators have made the trans-Saharan annual cycle tractable for the first time. Since 2014, the Swiss Ornithological Institute has tagged Alpine Swifts at four populations along a twelve-degree latitudinal gradient: Pirasali Island (Turkey, 36.3 deg N), Tarragona (Spain, 41.1 deg N), Sofia (Bulgaria, 42.7 deg N) and six colonies in Switzerland (46-47 deg N). The headline finding of @meier2020 is that the eastern and western populations follow **two geographically distinct flyways** across the Sahara - the western pair via Iberia and Western Sahara, the eastern pair via the eastern Mediterranean and Egypt - and winter in **spatially separate** regions of tropical Africa, even though their migration speeds are statistically indistinguishable. Length of stay at the breeding site is negatively correlated with breeding latitude.
 
-The dashboard developed for this project turns that scientific
-result into an *interactive* experience with three goals: (i) make the
-spatial separation of the two flyways visually obvious, (ii) let users
-explore how breeding-site latitude shapes annual-cycle phenology, and
-(iii) communicate the rapidity of the trans-Saharan crossing through an
-animated replay (the Phase-2 extension).
+The dashboard turns that scientific result into an interactive experience for **bird enthusiasts**, with three goals: (i) make the spatial separation of the two flyways visually obvious, (ii) let users explore how breeding latitude shapes annual-cycle phenology, and (iii) communicate the rapidity of the trans-Saharan crossing through a playable animation in which geolocator uncertainty is shown rather than hidden.
 
-# Datasets
+# MacEachren's Geovisualization Cube and our audience
 
-The dashboard loads tracking data directly from the **Movebank Data
-Repository** (MDR), the open-access archive hosted by the University of
-Konstanz in coordination with the Max Planck Institute of Animal
-Behavior [@movebank]. The relevant studies are published under the
-title pattern *"[Colony] – Long term study on migratory movement of
-Alpine swifts (Apus melba)"* with persistent DOIs (e.g. Switzerland
-Baden: `10.5441/001/1.d6n476k0`). The `tracks.csv` files for nine
-colonies — Baden, Biel, Lausanne, Lenzburg, Luzern, Solothurn (CH),
-Tarragona (ES), Sofia (BG), Pırasalı (TR) — are placed in
-`data/raw/movebank/` and ingested by `R/data_acquisition.R`.
+@maceachren1995 [@maceachren2004] places any cartographic interface inside a three-dimensional design space - the *Geovisualization Cube*. The three axes are *audience* (private to public), *task* (exploring to presenting) and *interaction* (low to high). Conventional thematic maps in a printed journal sit at the *public-presenting-low* corner; internal exploratory scripts sit at the opposite *private-exploring-high* corner.
 
-After light-level processing and quality control by the original
-authors, 173 individuals have continuous-cycle tracks of the kind
-needed for migration phenology. Spatial resolution is approximately
-two positions per twenty-four-hour twilight pair (~2 fixes / day); the
-temporal extent of the bundled data covers the 2014–2016 annual
-cycles. After daily aggregation the working table contains
-~40,000 daily fixes.
+The Alpine Swift dashboard deliberately occupies a **middle position**: *public, reveal/present, medium-to-high interaction*. The intended audience is bird enthusiasts who already love the species. That choice constrains every later decision:
 
-The principal data-quality concern — well known to the geolocator
-community — is positional error near the spring (≈20 March) and
-autumn (≈22 September) equinoxes, when day-length alone cannot
-resolve latitude. The dashboard's classifier accounts for this by
-applying a wide (600 km) distance buffer around the breeding colony
-during the shoulder months April and September.
+* The dashboard explains itself - About tab, adaptive on-map legend and per-layer hover labels substitute for an analyst's prior knowledge.
+* Defaults are narratively useful, not statistically neutral. The slider opens at day 100 (early April), when Alpine Swifts are at the breeding sites, so the first frame is recognisable.
+* The interaction repertoire is broad but bounded: filter, brush-via-click, animate and overlay-toggle, but not raw-data export or statistical-model controls - those belong to the private-exploring corner of the cube.
 
-The repository also ships a scientifically-calibrated *synthetic*
-dataset of 215 birds, used as a fallback when no real CSVs are present
-in `data/raw/movebank/`. The synthetic generator reproduces five
-empirical properties of the published study: the two flyways, the
-5–10 °N wintering band, the latitudinally compressed breeding stay,
-the median 6 / 9-day migration durations, and the ~150 km geolocator
-positional uncertainty that balloons near equinoxes.
+# The Cairo Wheel evaluation
 
-# Storytelling concept
+@cairo2016 proposes a six-axis Visualisation Wheel; each axis is a trade-off, and a good visualisation is one whose chosen positions are internally consistent with the intended audience, not "as far to one side as possible".
 
-Following Slocum et al.'s argument that static and animated cartography
-sit on a continuum rather than in separate panels, the dashboard
-collapses both into a single integrated map. The user opens the page
-with every filtered fix visible at full opacity (the "static overview")
-and can press **Play** to watch the same data unfold in time. The page
-is built around three nested questions, each surfaced by a distinct
-visual:
+| Cairo axis | Our position | Justification |
+|---|---|---|
+| Abstraction - Figuration | Mid, toward abstraction | A subdued Positron basemap is figurative enough to be recognisable, suppressed enough that the bird tracks dominate. |
+| Functionality - Decoration | Closer to functional | No chartjunk, no rainbow ramps. The only "decoration" is the warm KPI colouring matched to the lay audience. |
+| Density - Lightness | Mid, adjustable | Path resamples are alpha-blended so density encodes credibility; uncertainty and trail layers are individually toggleable. |
+| Multidimensionality - Unidimensionality | Multidimensional | Population, time, phase, latitude and uncertainty are encoded simultaneously because flyway separation is a spatio-temporal phenomenon. |
+| Originality - Familiarity | Conventional with one bespoke layer | Boxplots, time sliders and Leaflet basemaps are conventional. The migration-uncertainty shadow is the one bespoke device, derived from Figure 1 of @meier2020. |
+| Novelty - Redundancy | Slightly redundant | The current day-of-year is shown in three places (map highlight, slider thumb, date readout); Cairo treats this purposeful redundancy as a feature, not a flaw. |
 
-1. **Do birds from different colonies travel to different places?**
-   The main map answers this on a subdued CartoDB Positron basemap on
-   which thematic symbols dominate. Hourly-interpolated fixes are
-   coloured by the active *Color by* setting (country, colony, flyway,
-   or year). Breeding colonies are highlighted with size-encoded ring
-   markers (symbol area ∝ number of birds), and click popups expose
-   per-fix metadata (bird id, year, date, phase).
+# The Visual Analytics mantra
 
-2. **How does breeding latitude shape the annual cycle?** The linked
-   **latitude × day-of-year** plot below the map is a classical
-   signature plot in migration ecology. Each line is one continuous
-   tracking-burst segment of a single bird-year (breaks at gaps >14 d);
-   steep descents in autumn show the trans-Saharan crossing, ascents in
-   spring the return.
+@keim2008 condenses Visual Analytics into "*Analyse first - show the important - zoom, filter and analyse further - details on demand*", an extension of @shneiderman1996's earlier "*Overview first, zoom and filter, details on demand*". The dashboard implements all four steps:
 
-3. **What does this look like in motion?** Pressing Play dims the
-   backdrop and overlays bright dots at each bird-year's interpolated
-   position for the slider's day-of-year. A togglable *sperm trail*
-   draws the last 12 / 24 / 72 h of each bird as a fading polyline,
-   making the speed of the crossing visceral. Reset returns to the
-   static overview.
+1. **Analyse first.** `R/data_processing.R` does the heavy work before any pixel is drawn: per-bird airspeed filtering (drops fixes that would require > 50 km/h ground speed, just above the Meier 2020 cruising speed of 12.6 m/s = 45.4 km/h), daily median aggregation, and the rolling 10/90 percentile latitudinal uncertainty band.
+2. **Show the important.** The first frame already shows the two flyways under the default *Color by Country* setting - the headline finding of @meier2020 is the opening view.
+3. **Zoom, filter, analyse further.** Sidebar quick filters (All / W flyway / E flyway / Clear), the per-colony picker, the year slider, the layer-control overlay toggles and Leaflet's native pan-zoom give the user explicit control over spatial, temporal and categorical extent.
+4. **Details on demand.** Every dot carries a hover label and a click handler. Clicking selects the bird and draws its full bird-year tracks; the sidebar card shows colony, country, flyway, fix count, latitude range and observed phases. Clicking the same bird again deselects.
 
-Filters in the sidebar drive every component reactively. Single-click
-quick-filter buttons (**All / W flyway / E flyway / Clear**) select the
-most analytically meaningful groupings; the picker beneath them offers
-per-colony fine-grained control. A "Color by" radio (Country / Colony
-/ Flyway / Year) re-keys every legend in the app without changing
-**which** points are on screen — a separation between data identity
-and visual encoding consistent with [@slocum2009 ch. 14]. To keep that
-separation honest, the down-sampling step that picks the visible 8 000
-rows uses a fixed seed: changing Color by recolours the same points
-rather than shuffling the visible subset.
+# Key geovisual analytics interactions
 
-# Cartographic decisions
+Following the @maceachren2004 taxonomy, the dashboard supports six classical interactions:
 
-The dashboard explicitly follows several principles from *Thematic
-Cartography and Geovisualization*:
+* **Identify** - hover labels and the on-map legend identify each dot's bird, colony and phase.
+* **Locate** - map projection, layer control and animation date readout locate every observation in space and time.
+* **Filter** - quick-filter buttons, the colony picker and the year slider restrict the active row set. The *Color by* radio is deliberately not a filter - it only re-codes existing dots, so the visible point set never changes silently.
+* **Re-express / re-encode** - *Color by* Country / Colony / Flyway / Year re-expresses the same observations under different categorical decompositions. The on-map legend adapts in real time.
+* **Compare** - the latitude boxplot beneath the map compares the current-day distribution across populations; the phenology card compares whole annual-cycle trajectories.
+* **Animate / playback** - Play / Pause / Reset, three speed steps and the slider give the user complete time control.
 
-* **Visual hierarchy and figure-ground.** The CartoDB Positron tile
-  layer is pale grey on white; thematic symbols therefore dominate
-  without heavy stroke weights. Colony markers carry a thin dark
-  stroke so they remain legible against the heatmap when both layers
-  are active.
-* **Colour theory.** The qualitative palette is Okabe-Ito-derived
-  (Switzerland deep blue `#0072B2`, Spain vermilion `#D55E00`,
-  Bulgaria bluish-green `#009E73`, Turkey muted pink `#CC79A7`) and
-  has been verified colour-blind-safe for protanopia and deuteranopia.
-  The sequential ramp is `viridis` (light yellow → dark purple), used
-  for the migration-density heatmap. Rainbow and spectral ramps are
-  **explicitly excluded**.
-* **Symbolisation.** Daily fixes use small constant-size dots with
-  low fill-alpha; the migration-density heatmap conveys density
-  without ambiguous size-encoding. Colony markers scale with
-  $\sqrt{n_{\text{birds}}}$, matching the perceptual rule that symbol
-  *area* (not radius) should encode quantity.
-* **Reference framing.** The **Tropic of Cancer** (23.4366 °N) is
-  drawn as a dashed grey line on both maps — a non-arbitrary
-  geographical landmark that every Alpine swift in the dataset
-  crosses twice a year.
-* **Map projection.** Leaflet web maps are constrained to Web
-  Mercator, which severely distorts area at higher latitudes — a poor
-  fit for a trans-continental view. The static figures in this report
-  are therefore reprojected to an equal-area projection (Eckert IV /
-  EPSG:54012) for area-faithful representation of the Europe-Africa
-  extent (Figure @fig-flyways).
-* **Overplotting management.** With ~40,000 daily fixes, naïve scatter
-  would saturate. The map module samples down to ≤ 4,000 points for
-  the persistent animation backdrop and ≤ 8,000 for marker rendering
-  on the main map; alpha-blending preserves density information at
-  the corridor scale. The migration-density heatmap is computed on
-  the full migration subset.
+# Geolocator uncertainty and how we visualise it
+
+Light-level geolocators infer position from sunrise / sunset times. **Longitude** comes from the *time* of solar noon and is fairly accurate (~30-100 km). **Latitude** comes from *day length* and is far less accurate (~150 km nominal, growing to ~300 km near the equinoxes when day length is identical at all latitudes) [@lisovski2012; @lisovski2020]. Alpine Swifts breed in dark crevices, so cavity behaviour contaminates dawn / dusk estimates - the published data therefore omits localisation during the breeding phase. Wintering positions appear visibly grid-binned because the published FLightR posterior collapses to a discrete spatial grid during long stationary periods.
+
+The dashboard surfaces this uncertainty explicitly rather than hiding it:
+
+1. **Path-Resample dot cloud.** Every retained daily fix is drawn simultaneously at low alpha; overlapping fixes accumulate into denser regions, so dot density itself encodes credibility (Meier 2020, Figure 1 style).
+2. **Migration-uncertainty shadow.** For every migration fix we draw a thin vertical polyline from `(lon, lat_lo)` to `(lon, lat_hi)`, with `lat_lo` / `lat_hi` the 10th and 90th percentiles of a centred 7-day rolling window per bird-year. The polyline is rendered at 10% opacity in the bird's colour, so cumulatively the shadows form a diffuse latitudinal band rather than a misleading hard line. Crucially, this shadow is *length-encoded* in latitude and *spatially anchored* to the fix's longitude, matching the underlying error structure; longitudinal error is much smaller and deliberately not visualised.
+3. **Burst-aware lines.** Phenology lines are split where the geolocator missed more than 14 consecutive days, so no straight line bridges a multi-week gap.
+4. **Airspeed filter.** Consecutive pairs that would require > 50 km/h average ground speed are removed before aggregation, eliminating large light-noise spikes.
+
+The shadow is toggleable in the map's layer control, so users who prefer a clean static frame can switch it off without losing the underlying dots.
+
+# Visual variables, measurement levels and colour scheme
+
+@stevens1946's measurement-level taxonomy and @bertin1983's semiology of graphics jointly motivate every channel decision in the dashboard. Nominal categories map to *hue*, ordinal categories to *lightness*, and ratio quantities to *length* or *position* - the Bertin / Slocum default, chosen because the human visual system is best at matching those visual variables to those measurement levels.
+
+| Variable | Level | Visual variable | Implementation |
+|---|---|---|---|
+| `country` | Nominal | Hue | Dark2 4-colour palette. |
+| `colony_name` | Nominal | Hue (extended) | Dark2 ramp, stable per colony. |
+| `flyway` (W / E) | Nominal | Hue | First two Dark2 hues - same family as `country` so legends remain consistent. |
+| `year` (2014-2016) | Ordinal | Lightness | YlGnBu 3-step sequential ramp. |
+| `phase` | Nominal | Alpha | Migration dots 0.55, breeding / wintering 0.28. |
+| `lat` | Ratio | Position (y) | Latitude has a meaningful zero at the equator. |
+| `lon` | Interval | Position (x) | Longitude has an arbitrary zero (Greenwich). |
+| `doy` (day of year) | Interval (cyclical) | Slider position + animation tick | |
+| `lat_unc = lat_hi - lat_lo` | Ratio | Length of shadow stroke | Doubled length = doubled uncertainty. |
+| `n_birds_active_on_day` | Ratio | Boxplot whisker + jitter density | Zero is meaningful. |
+
+Qualitative groupings use **ColorBrewer "Dark2"** (Switzerland #1B9E77, Spain #D95F02, Bulgaria #7570B3, Turkey #E7298A): canonical for nominal data with up to eight categories, colour-blind safe under protanopia, deuteranopia and tritanopia, and reliably distinguishable on print. The flyway palette reuses the first two Dark2 hues so the legend stays consistent between *Color by Country* and *Color by Flyway*. Ordinal `year` uses **YlGnBu** (#EDF8B1 -> #7FCDBB -> #2C7FB8), a multi-hue sequential ramp that survives black-and-white printing and reads correctly under common forms of colour blindness. **No rainbow / spectral ramps are used anywhere.** The basemap is desaturated CartoDB Positron (figure / ground principle). Selected-bird highlights use black + sodium yellow (#FFE45E), a chromatic family not used by any population palette, so the selection layer never collides with the group colours.
+
+For the animation, the same channel discipline carries through: hue continues to encode population identity across frames; symbol size and a dark outline lift the current frame above the static cloud without changing hue; an explicit Leaflet pane (`paneCurrent`, z-index 470) guarantees that the current-day markers always sit on top; phase-aware alpha keeps the breeding cluster from saturating the map.
+
+# Additional points: MAUP and the moving-point trail
+
+**MAUP.** The Modifiable Areal Unit Problem [@openshaw1984] arises when point observations are summarised inside areal units (countries, hex grids) and the choice of boundary materially changes the conclusion. The dashboard mostly avoids MAUP because it visualises *individual point fixes*, not area-aggregated counts. Two latent sources remain. The per-bird phase labels (breeding / migration / wintering) come from a hand-curated classification in the Movebank `comments` column - the boundaries of those classes are themselves a temporal areal decision. We mitigate this by keeping the original authors' labels and by showing the lat_lo / lat_hi shadow during migration so that spatial uncertainty is not silenced by the phase label. The FLightR grid-binned wintering positions are a second latent source; we deliberately do not re-aggregate them so that the user sees the grid artefact explicitly rather than smoothed into a misleadingly continuous distribution.
+
+**Why a moving-point trail (sperm trail).** A naive animation that only redraws the current frame loses recent direction and speed - precisely the property that makes Alpine Swifts remarkable (median trans-Saharan crossing 6 days outbound, 9 days return). The toggleable Moving-point Trail draws each bird's last 1 / 3 / 7 days as a continuous polyline coloured by the active grouping. Short trails communicate apparent motion via Wertheimer's *phi phenomenon* without forcing a high frame rate. Because we never interpolate across gaps, the trail visibly *breaks* where the bird was untracked - honest about the gap rather than silently filling it. The four-level radio (Off / 1 / 3 / 7 days) lets the user choose how much past context they want.
+
+# Static figures
 
 ```{r}
 #| label: fig-flyways
-#| fig-cap: "Daily Alpine swift fixes from the Movebank Data Repository, reprojected to an equal-area projection (Eckert IV). Two distinct trans-Saharan flyways are visible: western (Spain, Switzerland) crossing via Iberia and Western Sahara, eastern (Bulgaria, Turkey) via the eastern Mediterranean and Egypt. Wintering grounds at 5-10 N differ between the two flyways."
+#| fig-cap: "Path-resample dot cloud for the trans-Saharan annual cycle, reprojected to an equal-area projection (Eckert IV, EPSG:54012). Each translucent dot is one retained daily fix; the two distinct flyways (western: Switzerland + Spain; eastern: Bulgaria + Turkey) and their spatially separate wintering grounds at 5-10 deg N are visible as denser regions of the cloud."
 #| fig-width: 8
 #| fig-height: 5
 
@@ -220,23 +157,21 @@ mb_dir <- "data/raw/movebank"
 files  <- list.files(mb_dir, pattern = "tracks.*\\.csv$",
                      full.names = TRUE, ignore.case = TRUE)
 
-if (length(files) == 0) {
+if (length(files) == 0 && file.exists("data/raw/tracks.csv")) {
   tr <- readr::read_csv("data/raw/tracks.csv", show_col_types = FALSE)
-} else {
+} else if (length(files) > 0) {
   tr <- purrr::map_df(files, function(f) {
-    raw <- readr::read_csv(f, show_col_types = FALSE, progress = FALSE)
-    nm  <- names(raw)
-    lonc <- nm[grep("location.{0,1}long|longitude$",
-                    nm, ignore.case = TRUE)][1]
-    latc <- nm[grep("location.{0,1}lat|latitude$",
-                    nm, ignore.case = TRUE)][1]
+    raw  <- readr::read_csv(f, show_col_types = FALSE, progress = FALSE)
+    nm   <- names(raw)
+    lonc <- nm[grep("location.{0,1}long|longitude$", nm, ignore.case = TRUE)][1]
+    latc <- nm[grep("location.{0,1}lat|latitude$",  nm, ignore.case = TRUE)][1]
     sn   <- basename(f)
     country <- dplyr::case_when(
       grepl("Switzerland", sn) ~ "Switzerland",
       grepl("Spain",       sn) ~ "Spain",
       grepl("Bulgaria",    sn) ~ "Bulgaria",
       grepl("Turkey",      sn) ~ "Turkey",
-      TRUE ~ NA_character_)
+      TRUE                     ~ NA_character_)
     data.frame(lon = raw[[lonc]], lat = raw[[latc]], country = country)
   })
 }
@@ -249,7 +184,7 @@ sf_pts <- st_as_sf(tr, coords = c("lon", "lat"), crs = 4326) |>
   st_transform("ESRI:54012")
 
 ggplot(sf_pts) +
-  geom_sf(aes(color = country), size = 0.35, alpha = 0.35) +
+  geom_sf(aes(color = country), size = 0.4, alpha = 0.30) +
   geom_hline(yintercept = 0, linetype = "dotted", color = "grey80") +
   scale_color_manual(values = COUNTRY_COLORS, name = NULL) +
   labs(x = NULL, y = NULL) +
@@ -259,158 +194,73 @@ ggplot(sf_pts) +
 ```
 
 ```{r}
-#| label: fig-phenology
-#| fig-cap: "Latitude across the annual cycle, by country, from the daily-aggregated dataset. Steep descents represent autumn migration; rebounds represent the spring return. All populations winter at 5-10 N below the Tropic of Cancer (dashed). Higher-latitude populations show shorter breeding-site occupancy."
+#| label: fig-uncertainty
+#| fig-cap: "The migration uncertainty band for a single representative bird-year. The shaded ribbon is the 10-90 percentile of latitude inside a centred 7-day rolling window (lat_lo to lat_hi); the bold line is the daily median latitude. The band visibly widens near the equinoxes (around days 80 and 265) where day-length-based latitude is least informative, exactly the behaviour the dashboard's on-map shadow strokes encode for every migration fix."
 #| fig-width: 8
 #| fig-height: 3.6
 
 if (file.exists("data/processed/tracks_processed.rds")) {
   pr <- readRDS("data/processed/tracks_processed.rds")
   d  <- pr$daily
-  ggplot(d, aes(x = doy, y = lat, color = country,
-                group = paste(bird_id, year))) +
-    geom_line(alpha = 0.08, linewidth = 0.28) +
+  # Pick one bird-year with a complete annual cycle so the equinox
+  # broadening is visible in the band.
+  pick <- d |>
+    dplyr::group_by(bird_id, year) |>
+    dplyr::summarise(n = dplyr::n(), span = diff(range(doy)),
+                     .groups = "drop") |>
+    dplyr::arrange(dplyr::desc(span), dplyr::desc(n)) |>
+    dplyr::slice(1)
+  one <- d |>
+    dplyr::filter(bird_id == pick$bird_id, year == pick$year) |>
+    dplyr::arrange(doy)
+  one_country <- one$country[1]
+  ggplot(one, aes(x = doy)) +
+    geom_ribbon(aes(ymin = lat_lo, ymax = lat_hi),
+                fill = unname(COUNTRY_COLORS[one_country]),
+                alpha = 0.22) +
+    geom_line(aes(y = lat), color = unname(COUNTRY_COLORS[one_country]),
+              linewidth = 0.6) +
     geom_hline(yintercept = 23.4366, linetype = "dashed",
                color = "grey55") +
-    annotate("text", x = 5, y = 25.5, label = "Tropic of Cancer",
+    annotate("text", x = 5, y = 25, label = "Tropic of Cancer",
              size = 3, color = "grey45", hjust = 0) +
-    scale_color_manual(values = COUNTRY_COLORS, name = NULL) +
     scale_x_continuous(breaks = c(1, 60, 121, 182, 244, 305),
                        labels = c("Jan", "Mar", "May", "Jul",
                                   "Sep", "Nov")) +
-    labs(x = NULL, y = "Latitude (°N)") +
+    labs(x = NULL, y = "Latitude (deg N)",
+         title = sprintf("Bird %s - %d (%s)",
+                         pick$bird_id, pick$year, one_country)) +
     theme_minimal(base_size = 10) +
-    theme(legend.position = "bottom")
+    theme(legend.position = "none",
+          panel.grid.minor = element_blank())
 }
 ```
 
-# Key dashboard functionalities
-
-* **Filter module** (`R/mod_filters.R`). Quick-filter buttons for
-  All / W flyway / E flyway / Clear sit above a colony picker grouped
-  by country. A year slider, a phase checkbox group (scoped to the
-  Map tab) and a "Color by" radio complete the filter set. Filters
-  are exposed as three reactives — `daily()`, `daily_anim()` and
-  `phenology()` — so the animation can ignore the phase filter (phase
-  is implicit in day-of-year) while the map and phenology panels do
-  apply it.
-* **Map module** (`R/mod_map.R`). Leaflet base map fitted to the
-  trans-Saharan extent (−18 °W, −5 °N → 45 °E, 55 °N); circle-marker
-  layer for tracking points (alpha-blended for overplotting); viridis
-  density heatmap for the migration corridor (off by default to keep
-  the map clean); size-scaled colony markers; HTML legend control
-  that updates with the active grouping; layer-control top-right;
-  Tropic-of-Cancer reference line.
-* **Phenology module** (`R/mod_phenology.R`). A plotly latitude × DOY
-  panel for every bird-year, and a scatter of breeding-stay vs.
-  breeding latitude with a linear-model overlay reproducing the
-  Meier 2020 result.
-* **Metrics module** (`R/mod_metrics.R`). Four KPI value-boxes:
-  individuals tracked, daily fixes, populations / colonies (e.g.
-  "4 / 9"), and median breeding stay.
-* **Animation module** (`R/mod_animation.R`). Day-of-year slider with
-  play / pause autoplay and a configurable trail length. **Two-layer
-  rendering**: a permanent down-sampled "anim_bg" backdrop of every
-  filtered fix (faint), plus a bright "anim_trail" layer that updates
-  on each frame. This eliminates the "empty frame" problem and keeps
-  the map smooth on commodity laptops. A large date readout above
-  the slider keeps the viewer oriented to the current time.
-
-# Phase-2 extension: animation
-
-Among the five extension options offered in the assignment, animation
-is the strongest fit for migration data: the very *speed* of the
-trans-Saharan crossing — one of the central scientific findings — is
-the kind of property a static map cannot convey. The animation
-module implementation uses Shiny's built-in `animationOptions` for
-playback driving and `leafletProxy()` for differential layer updates
-(no full-map redraw between frames). Two-layer rendering is the key
-to perceived smoothness: the heavyweight backdrop is computed once
-per filter change, while the lightweight trail re-renders at every
-slider tick. The trail's per-point opacity decays linearly with
-temporal distance from the current frame, producing a "comet tail"
-effect that matches Tversky's principles for perceiving change in
-animation.
-
 # Implementation notes
 
-* **Modular Shiny.** Each panel is implemented as a self-contained
-  module (`mod_*.R`) using the standard `moduleServer()` pattern.
-  Cross-module communication flows through the `filters_server()`
-  return value (a list of reactives), keeping dependencies
-  one-directional.
-* **Reactive performance.** The processed dataset is built once and
-  cached as `data/processed/tracks_processed.rds`. Filters operate on
-  the daily-aggregated table (~40k rows) rather than the
-  twilight-resolution table (~80k rows), keeping plot updates well
-  under 200 ms even on the map's largest selection.
-* **Portability.** Every file path is relative; the project drops into
-  any Positron / RStudio workspace without modification. A bundled
-  synthetic dataset means the dashboard runs offline immediately when
-  no Movebank files are present.
-* **Reproducibility.** Package versions are intentionally not pinned
-  via `renv` to keep the dependency surface small, but `_setup.R`
-  installs only stable, widely-used CRAN packages.
+* **Modular Shiny.** Each panel is a self-contained module (`mod_*.R`) using `moduleServer()`. Cross-module communication flows through the `filters_server()` return value (a list of reactives), so dependencies are one-directional and the dashboard is testable.
+* **Server-side animation.** The loop uses `reactiveVal(is_playing)`, `invalidateLater(200)` and `updateSliderInput()`. A throttled `plot_doy()` reactive shields the boxplot from per-tick re-renders.
+* **Leaflet panes for honest z-ordering.** Five panes are declared at map creation (`paneShadow` 380, `paneTrail` 410, `paneResamples` 425, `paneSelected` 440, `paneCurrent` 470). Every layer is tagged with the appropriate pane, so the current-day markers are guaranteed to render on top irrespective of observer firing order.
+* **Adaptive on-map legend.** A dedicated observer maintains a single controllable legend at the top-right using `removeControl("anim_legend")` + `addControl(..., layerId = "anim_legend")`. The legend HTML is generated by `render_map_legend(resolve_palette(df, gm))`, so it always matches the drawn data.
+* **Cache.** The processed table (daily medians, uncertainty band, phenology) is persisted in `data/processed/tracks_processed.rds`; re-launches start in ~1 s. Rebuild with `build_processed_data(force = TRUE)`.
+* **Portability.** Every path is relative; the project drops into any Positron / RStudio workspace without modification. A bundled synthetic dataset means the dashboard runs offline immediately when no Movebank files are present.
+
+# Cartographic and scientific compliance
+
+* **@slocum2009.** Figure / ground via a low-chroma Positron basemap (ch. 12), ColorBrewer Dark2 for nominal data and YlGnBu sequential for ordinal `year` (ch. 14), integrated rather than two-panel static / animated map (ch. 22), and an equal-area Eckert IV reprojection for the static report figures.
+* **@meier2020.** The dashboard reads the four-population gradient, the published `comments` phase classification and the airspeed cap directly from the Meier methodology. The Path-Resample dot cloud and the migration uncertainty shadow are the interactive counterparts of the paper's Figure 1. No fake interpolation crosses gaps larger than 14 days.
 
 # Limitations and future work
 
-* **Equinox uncertainty is modelled but not visualised explicitly.** A
-  natural follow-on extension would be transparent error ellipses
-  around each fix.
-* **Wind support** along the two flyways is hypothesised in the
-  source paper to explain the eastern-western flyway divergence.
-  Pairing the tracks with reanalysis wind data (e.g. ECMWF ERA-5)
-  would let users explore whether observed deviations from the
-  corridor centroid correlate with daily wind anomalies.
-* **Wintering-area kernel densities** would sharpen the visual
-  distinction between western and eastern populations south of
-  10 °N, where the current point-cloud representation is fuzzy.
+* **Wind support.** Pairing the tracks with ECMWF ERA-5 reanalysis would let users explore whether deviations from the corridor centroid correlate with daily wind anomalies - the mechanism the paper hypothesises for the east-west flyway divergence.
+* **Kernel-density wintering surface.** A toggleable 2D kernel density (with bandwidth justified by geolocator uncertainty) could sharpen the wintering distinction without re-introducing a hull boundary.
+* **Live Movebank pull.** A `move2`-driven option to refresh the cache from the Movebank API on demand would make the dashboard truly live.
 
 # Declarations
 
-## Individual contributions
+**Individual contributions.** Lukas Buchmann implemented the dashboard, the data pipeline and the report. Etienne Duerig contributed cartographic feedback and reviewed the report draft.
 
-This solo-submission template assumes a single author. For group
-submissions, replace this section with a contribution matrix.
-
-## AI use
-
-Code scaffolding, the synthetic-data generator, dashboard polish
-iterations and a first pass of this report were produced with the
-assistance of an Anthropic Claude model (Claude Opus). All generated
-code was reviewed line-by-line before commit; the cartographic
-choices, the storytelling structure, and the selection of the Phase-2
-extension are the authors' own. Biological framing draws on Meier et
-al. 2020 and is cited accordingly; no text from the source paper is
-reproduced verbatim.
-
-## Cartographic and scientific compliance
-
-The dashboard was built against two reference texts and kept aligned
-with both throughout development:
-
-* **Slocum, McMaster, Kessler & Howard (2009)** —
-  *Thematic Cartography and Geovisualization* (3rd ed.). Applied
-  principles: figure / ground via a low-chroma Positron basemap
-  (ch.12), qualitative ColorBrewer "Dark2" for nominal data and
-  sequential YlGnBu for the ordinal *Year* channel (ch.14),
-  area-proportional symbol sizing for colony markers (ch.14),
-  configurable playback pacing and persistent date readout for the
-  animation (ch.21–22), and an integrated rather than two-panel
-  static/animated map (ch.22).
-
-* **Meier et al. (2020)**, *J. Avian Biology* — the source paper. The
-  dashboard reads the four-population gradient (TR / ES / BG / CH),
-  the burst-by-burst tracking structure, and the published `comments`
-  phase classification (*breeding site* / *non-breeding site* /
-  *migration*) directly from the Movebank Data Repository CSVs. The
-  Tropic of Cancer dashed line at 23.4366 °N matches the boundary
-  used in the paper's Methods to separate breeding from non-breeding
-  sites. Linear interpolation between consecutive daily medians is
-  only applied **within tracking bursts** (gaps ≤14 d), so multi-week
-  geolocator dropouts remain visibly empty rather than being bridged
-  by straight lines — staying inside the positional-uncertainty
-  envelope cited in the paper.
+**AI use.** Code scaffolding, the synthetic-data generator, polish iterations and a first pass of this report were produced with the assistance of an Anthropic Claude model. All generated code was reviewed line-by-line before commit; the cartographic choices, the storytelling structure and the selection of the Phase-2 extension are the authors' own. No text from @meier2020 is reproduced verbatim.
 
 # References {.unnumbered}
 

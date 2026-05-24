@@ -33,10 +33,11 @@ COUNTRY_COLORS <- c(
   "Turkey"      = "#E7298A"    # Dark2-4 magenta
 )
 
-# Flyway: ColorBrewer "Set2" first two
+# Flyway: same Dark2 family as the country palette so the colour scheme
+# is consistent whether the user groups by country or by flyway.
 FLYWAY_COLORS <- c(
-  "western" = "#66C2A5",
-  "eastern" = "#FC8D62"
+  "western" = "#1B9E77",   # Dark2-1 teal
+  "eastern" = "#D95F02"    # Dark2-2 orange
 )
 
 # Year: ColorBrewer "YlGnBu" 3-step (sequential, Slocum ch.14 - ordinal data
@@ -54,28 +55,19 @@ PHASE_COLORS <- c(
   "wintering"  = "#542788"    # deep purple (residence in tropics)
 )
 
-# Sequential ramp for time / count
+# Sequential ramp for time / count (perceptually uniform, colorblind-safe)
 SEQ_RAMP <- function(n = 9, option = "viridis") {
   viridisLite::viridis(n, option = option, direction = 1, end = 0.95)
 }
 
-# Heatmap gradient: leaflet.extras::addHeatmap wraps a *character vector*
-# of colors with colorNumeric internally, so we pass it as such.
-# Viridis sequence (light yellow -> dark purple) - perceptually uniform,
-# colorblind-safe. NEVER spectral / rainbow.
-HEATMAP_GRADIENT <- c("#FDE725", "#7AD151", "#22A884",
-                      "#2A788E", "#414487", "#440154")
-
-# Subdued base map (CartoDB Positron) - pale grey, low chroma
+# Subdued base map (CartoDB Positron) - pale grey, low chroma. The pale
+# basemap is intentional: figure / ground principle (Slocum ch. 12) means
+# the thematic symbols (bird tracks) must dominate, not the substrate.
 BASEMAP_URL <- "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
 BASEMAP_ATTR <- paste0(
   "&copy; <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> ",
   "contributors &copy; <a href=\"https://carto.com/attributions\">CARTO</a>"
 )
-
-# Optional darker basemap for the animation tab (better contrast for moving
-# bright symbols on a darker ground - figure/ground principle).
-DARK_BASEMAP_URL <- "https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png"
 
 # Map extent: covers all breeding colonies + entire trans-Saharan migration
 # corridor down to the wintering grounds at 5 N.
@@ -126,7 +118,7 @@ resolve_palette <- function(df, gm) {
     country = COUNTRY_COLORS[levels],
     colony  = setNames(
       grDevices::colorRampPalette(
-        suppressWarnings(RColorBrewer::brewer.pal(8, "Set2"))
+        suppressWarnings(RColorBrewer::brewer.pal(8, "Dark2"))
       )(length(levels)),
       levels),
     flyway  = FLYWAY_COLORS[levels],

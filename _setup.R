@@ -33,22 +33,17 @@ if (!is.null(.this)) {
 }
 
 required_pkgs <- c(
-  # Core
-  "shiny", "bslib", "bsicons", "shinyWidgets", "markdown",
-  
+  # Core Shiny stack
+  "shiny", "bslib", "bsicons", "shinyWidgets", "markdown", "htmltools",
+
   # Data wrangling
-  "dplyr", "tidyr", "readr", "lubridate", "purrr", 
-  "zoo",    # <--- ADDED: Required for hourly na.approx() interpolation
-  
+  "dplyr", "readr", "lubridate", "purrr",
+
   # Spatial
-  "sf", "leaflet", "leaflet.extras", "geosphere",
-  
+  "sf", "leaflet", "geosphere",
+
   # Visualisation
-  "ggplot2", "plotly", "scales", "viridisLite", "RColorBrewer",
-  
-  # API / Movebank Data
-  "move2",  # <--- UPDATED: 'move2' is the modern, sf-compatible standard
-  "httr2"   # <--- ADDED: Useful for handling Movebank REST API requests/credentials
+  "ggplot2", "plotly", "scales", "viridisLite", "RColorBrewer"
 )
 
 installed <- rownames(installed.packages())

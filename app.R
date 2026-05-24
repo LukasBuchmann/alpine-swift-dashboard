@@ -60,13 +60,19 @@ ui <- page_navbar(
       tags$link(rel = "stylesheet", type = "text/css", href = "custom.css"),
       tags$meta(name = "viewport",
                 content = "width=device-width, initial-scale=1.0"),
-      # ---- First-load overlay: visible until Shiny finishes initial work ----
-      tags$script(HTML(
-        "$(document).on('shiny:idle', function() {",
-        "  var el = document.getElementById('init-loader');",
-        "  if (el) { el.classList.add('fade-out');",
-        "            setTimeout(function(){ el.remove(); }, 600); }",
-        "});"))
+      # ---- First-load overlay: visible until Shiny has had time to draw
+      #      the leaflet map and the first plotly chart. We wait until the
+      #      first shiny:idle event AND a short settle delay so that the
+      #      animation observers (which run after initial render) have a
+      #      chance to populate the map before we hide the spinner.
+      tags$script(HTML(paste0(
+        "$(document).one('shiny:idle', function() {",
+        "  setTimeout(function() {",
+        "    var el = document.getElementById('init-loader');",
+        "    if (el) { el.classList.add('fade-out');",
+        "              setTimeout(function(){ el.remove(); }, 600); }",
+        "  }, 900);",
+        "});")))
     ),
     tags$div(id = "init-loader", class = "init-loader",
              tags$div(class = "init-loader-spinner"),
@@ -90,11 +96,10 @@ ui <- page_navbar(
           "doi:10.1111/jav.02515</a>.")))
   ),
 
-  # ---- Main panel: KPIs + merged map + phenology context plots ----
+  # ---- Main panel: merged map + phenology context plots ----
   nav_panel(
     title = "Dashboard",
     icon  = bsicons::bs_icon("globe-europe-africa"),
-    metrics_ui("metrics"),
     card(
       card_header(
         div(class = "d-flex justify-content-between align-items-center",
@@ -122,6 +127,10 @@ ui <- page_navbar(
         )
     )
   ),
+
+  # ---- Top-right KPI strip in the navbar ----
+  nav_spacer(),
+  nav_item(metrics_ui("metrics")),
 
   footer = div(class = "app-footer",
                span("Alpine Swift Migration Dashboard"),

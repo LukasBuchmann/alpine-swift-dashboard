@@ -77,32 +77,44 @@ substring against `Switzerland Baden`, `Spain Tarragona`, etc.
 
 ```r
 unlink("data/processed/tracks_processed.rds")   # invalidate cache
-shiny::runApp()                                  # auto-rebuilds on launch
+source("R/data_acquisition.R")
+source("R/data_processing.R")
+build_processed_data(force = TRUE)               # rebuild with new CSVs
+shiny::runApp()
 ```
 
-The first launch after adding new files takes ~30–60 s while the
-burst-aware hourly interpolation table is computed. The sidebar's
-"Data source" banner should switch from amber ("Synthetic") to green
-("Real Movebank Data Repository — *N* colonies, *M* birds").
+The first rebuild after adding new files takes ~15–30 s. It computes the
+airspeed-filtered daily medians and the per-bird latitudinal-uncertainty
+band (`lat_lo` / `lat_hi`) used to render the migration shadow on the
+animated map. The sidebar's "Data source" banner should switch from
+amber ("Synthetic") to green ("Real Movebank Data Repository — *N*
+colonies, *M* birds").
 
 ## Alternative: live Movebank API (for the missing colonies)
 
 To add Luzern (CH), Sofia (BG), or Pırasalı (TR) you need a free
 Movebank account at <https://www.movebank.org/> and per-study download
 permission from the Swiss Ornithological Institute (usually granted
-to academic requests within a few days). Once approved:
+to academic requests within a few days). Once approved you can use the
+`move2` package (the modern sf-compatible successor to `move`) to pull
+the study directly, then write the same `tracks.csv` shape this
+dashboard expects:
 
 ```r
-library(move)
-movebankLogin(username = "your_user", password = "your_pass")
-study <- getMovebankData(study = "Sofia - Long term study...",
-                         login = movebankLogin())
-write.csv(as.data.frame(study),
-          "data/raw/movebank/Bulgaria_Sofia-tracks.csv",
-          row.names = FALSE)
+# install.packages("move2")  # not required by the dashboard itself
+library(move2)
+movebank_store_credentials(username = "your_user")
+mv <- movebank_download_study(
+  study_id   = movebank_get_study_id("Sofia - Long term study..."),
+  attributes = c("timestamp", "location_long", "location_lat",
+                 "individual_local_identifier", "comments"))
+readr::write_csv(as.data.frame(mv),
+                 "data/raw/movebank/Bulgaria_Sofia-tracks.csv")
 ```
 
-Then repeat **Step 4** to rebuild the cache.
+Then repeat **Step 4** to rebuild the cache. `move2` is *not* listed in
+`_setup.R` because it is only needed for this optional ingestion path;
+install it on demand.
 
 ## Recommendation
 
