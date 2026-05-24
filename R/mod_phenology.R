@@ -58,7 +58,7 @@ phenology_server <- function(id, filtered, processed) {
                           text = sprintf("%s | %s\n%s",
                                          bird_id, group_col,
                                          format(date, "%d %b %Y")))) +
-        geom_line(alpha = 0.22, linewidth = 0.35) +
+        geom_line(alpha = 0.22, linewidth = 0.5) +
         scale_color_manual(values = pal$colors, name = NULL) +
         scale_x_continuous(
           breaks = c(1, 32, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335),

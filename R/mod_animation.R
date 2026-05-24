@@ -106,11 +106,13 @@ animation_server <- function(id, filtered, processed) {
 
     observe({
       if (!is_playing()) return()
-      invalidateLater(200)
+      # Slower base tick (300 ms) so the user has time to react to Pause and
+      # the displayed current-day marker stays in sync with the slider.
+      invalidateLater(300)
       isolate({
         cur  <- input$doy %||% 100
         step <- switch(input$speed_choice %||% "med",
-                       slow = 1, med = 3, fast = 7)
+                       slow = 1, med = 2, fast = 4)
         new_val <- if (cur + step > 365) 1 else cur + step
         updateSliderInput(session, "doy", value = new_val)
       })
@@ -120,14 +122,19 @@ animation_server <- function(id, filtered, processed) {
       shiny::throttle(350)
 
     # ---- Current-frame slice (used for highlight + latitude plot) ----------
+    # Tight +/- 1 day window: we want the visible current-day dot to actually
+    # match the slider's day. With daily aggregation there is at most one row
+    # per (bird, date), so the slice picks the bird's nearest fix within that
+    # 3-day window centred on d_f. Birds with no fix in the window simply do
+    # not appear for that frame - which is the honest representation.
     current_frame_data <- reactive({
       df <- filtered$daily()
       if (is.null(df) || nrow(df) == 0) return(NULL)
       d_f <- plot_doy()
       cur <- df %>%
-        dplyr::filter(abs(doy - d_f) <= 3) %>%
+        dplyr::filter(abs(doy - d_f) <= 1) %>%
         dplyr::group_by(bird_id, year) %>%
-        dplyr::slice(1) %>%
+        dplyr::slice(which.min(abs(doy - d_f))) %>%
         dplyr::ungroup()
       if (nrow(cur) == 0) return(NULL)
       gm <- filtered$group_mode()
@@ -255,13 +262,24 @@ animation_server <- function(id, filtered, processed) {
       if (is.null(df) || nrow(df) == 0) return()
 
       d_f <- plot_doy()
-      # Keep the trail_n days ending on the current day-of-year (wrap-aware:
-      # if trail_n is "Full" we keep everything up to the current day).
-      paths <- if (trail_n >= 365) {
-        df %>% dplyr::filter(doy <= d_f)
-      } else {
-        df %>% dplyr::filter(doy <= d_f & doy >= (d_f - trail_n))
-      }
+      # Anchor the trail at each bird's NEAREST fix to d_f using the same
+      # +/- 1 day window that current_frame_data() uses, so the polyline
+      # ends exactly at the bright current-day marker.
+      cur_anchor <- df %>%
+        dplyr::filter(abs(doy - d_f) <= 1) %>%
+        dplyr::group_by(bird_id, year) %>%
+        dplyr::slice(which.min(abs(doy - d_f))) %>%
+        dplyr::ungroup() %>%
+        dplyr::select(bird_id, year, current_doy = doy)
+
+      if (nrow(cur_anchor) == 0) return()
+
+      paths <- df %>%
+        dplyr::inner_join(cur_anchor, by = c("bird_id", "year")) %>%
+        dplyr::filter(doy <= current_doy,
+                      doy >= (current_doy - trail_n)) %>%
+        dplyr::arrange(bird_id, year, doy)
+
       if (nrow(paths) == 0) return()
 
       pal <- resolve_palette(df, gm)
@@ -272,25 +290,41 @@ animation_server <- function(id, filtered, processed) {
                                             year    = as.character(paths$year))])
       paths$col[is.na(paths$col)] <- "#999999"
 
+      # 1. Polylines: connect each bird-year's last trail_n daily fixes.
       groups <- split(paths, paste(paths$bird_id, paths$year, sep = "|"))
-      groups <- groups[vapply(groups, nrow, integer(1)) >= 2L]
-      if (length(groups) == 0) return()
+      groups_for_line <- groups[vapply(groups, nrow, integer(1)) >= 2L]
+      if (length(groups_for_line) > 0) {
+        geoms <- lapply(groups_for_line, function(g)
+          sf::st_linestring(cbind(as.numeric(g$lon), as.numeric(g$lat))))
+        meta  <- do.call(rbind, lapply(groups_for_line,
+                                       function(g) g[1, c("bird_id", "col"),
+                                                     drop = FALSE]))
+        trail_sf <- sf::st_sf(meta,
+                              geometry = sf::st_sfc(geoms, crs = 4326))
+        proxy %>% addPolylines(
+          data    = trail_sf,
+          color   = ~col,
+          weight  = 2.2,
+          opacity = 0.70,
+          group   = "Moving trail",
+          options = pathOptions(interactive = FALSE, pane = "paneTrail"))
+      }
 
-      geoms <- lapply(groups, function(g)
-        sf::st_linestring(cbind(as.numeric(g$lon), as.numeric(g$lat))))
-      meta <- do.call(rbind, lapply(groups,
-                                    function(g) g[1, c("bird_id", "col"),
-                                                  drop = FALSE]))
-      trail_sf <- sf::st_sf(meta,
-                            geometry = sf::st_sfc(geoms, crs = 4326))
-
-      proxy %>% addPolylines(
-        data    = trail_sf,
-        color   = ~col,
-        weight  = 2.5,
-        opacity = 0.65,
-        group   = "Moving trail",
-        options = pathOptions(interactive = FALSE, pane = "paneTrail"))
+      # 2. Small dots: one per fix in the trail (smaller than the bright
+      #    current-day marker, larger than the path-resample dots, so the
+      #    trail reads as the bird's recent trajectory).
+      proxy %>% addCircleMarkers(
+        data        = paths,
+        lng         = ~lon,
+        lat         = ~lat,
+        radius      = 3.5,
+        color       = "#1a1a1a",
+        weight      = 0.5,
+        fillColor   = ~col,
+        fillOpacity = 0.85,
+        group       = "Moving trail",
+        label       = ~paste(bird_id, "-", format(date, "%d %b %Y")),
+        options     = pathOptions(pane = "paneTrail", interactive = FALSE))
     })
 
     # ---- Current-day "latest data points" highlight (ALWAYS ON TOP) --------

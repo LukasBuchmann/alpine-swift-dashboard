@@ -29,8 +29,9 @@ Palaearctic.
   fix, running from the 7-day rolling 10th-percentile latitude to the
   90th-percentile latitude. Visualises the well-known geolocator
   latitudinal error rather than hiding it under a single hard line.
-- **Moving trail (sperm trail).** Optional polyline through the last
-  7 / 14 / 365 days of each bird, ending on the current day of year.
+- **Moving trail (sperm trail).** Optional smaller dots connected by
+  a line, showing each bird's last 1 / 3 / 7 daily fixes ending exactly
+  on the current-day marker.
 - **Current day.** Brighter, slightly translucent markers for every bird
   active on the current animation day. Always rendered on top.
 - **Selected bird.** Click any dot to draw its full bird-year tracks in
@@ -41,7 +42,8 @@ Palaearctic.
 - **Play / Pause** toggles a 200 ms server tick.
 - **Reset** returns to day 100 and clears any selection.
 - **Speed.** Slow (1 d / tick), Medium (3 d / tick), Fast (7 d / tick).
-- **Moving-point trail.** Off, 7 days, 14 days, or Full year.
+- **Moving-point trail.** Off, 1 day, 3 days, or 7 days of small
+  dots connected by a line.
 - **Date readout** above the slider keeps the viewer oriented.
 
 ### Data pipeline

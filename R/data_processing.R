@@ -5,7 +5,8 @@
 #   - Phase mapping (breeding, migration, wintering) from Movebank `comments`
 #   - Airspeed filter (drops fixes that would require > 50 km/h ground speed,
 #     comfortably above the Meier 2020 cruising speed of ~12.6 m/s = 45.4 km/h)
-#   - Daily median aggregation
+#   - Daily-median aggregation (one row per bird per date) so the animated
+#     current-day marker is unambiguous.
 #   - Rolling per-bird latitudinal uncertainty band (lat_lo / lat_hi / lat_unc)
 #     visualised as the migration "shadow" in the animated map.
 #   - Per-bird phenology (arrival, departure, length of stay).
@@ -69,12 +70,17 @@ build_processed_data <- function(force = FALSE) {
     dplyr::filter(is.na(speed_kmh) | speed_kmh <= 50.0) %>%
     dplyr::select(-time_diff_h, -dist_km, -speed_kmh)
 
+  # ---- Daily-median aggregation ------------------------------------------
+  # One row per (bird, date) = the median of all twilight fixes on that day.
+  # This is the standard light-level geolocator workflow and keeps the
+  # animation's current-day marker unambiguous.
   message("Aggregating to daily median position...")
   daily <- tracks %>%
-    dplyr::group_by(bird_id, colony_id, colony_name, country, flyway, year, date) %>%
+    dplyr::group_by(bird_id, colony_id, colony_name, country, flyway,
+                    year, date) %>%
     dplyr::summarise(
-      lat = median(lat, na.rm = TRUE),
-      lon = median(lon, na.rm = TRUE),
+      lat   = median(lat, na.rm = TRUE),
+      lon   = median(lon, na.rm = TRUE),
       phase = names(sort(table(phase), decreasing = TRUE))[1],
       .groups = "drop"
     ) %>%

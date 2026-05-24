@@ -29,7 +29,9 @@ filters_ui <- function(id) {
         actionButton(ns("qf_clear"), "Clear", class = "qf-btn")
     ),
     pickerInput(ns("country"), label = NULL, choices = .choices_grouped, selected = .all_colonies, multiple = TRUE, options = pickerOptions(actionsBox = TRUE, liveSearch = TRUE, size = 11, selectedTextFormat = "count > 3", countSelectedText = "{0} colonies selected")),
-    sliderTextInput(ns("year"), "Year", choices = c("2014", "2015", "2016"), selected = c("2014", "2016"), grid = TRUE),
+    sliderTextInput(ns("year"), "Year",
+                    choices = c("2014", "2015", "2016", "2017"),
+                    selected = c("2014", "2017"), grid = TRUE),
     radioButtons(ns("group_mode"), "Color by", choices = c("Country" = "country", "Colony" = "colony", "Flyway" = "flyway", "Year" = "year"), selected = "country", inline = TRUE),
     p(class = "small text-muted mt-2", "Tip: use the W/E flyway buttons to compare populations.")
   )
