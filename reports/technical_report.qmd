@@ -253,7 +253,7 @@ if (file.exists("data/processed/tracks_processed.rds")) {
 
 # Declarations
 
-**Individual contributions.** Lukas Buchmann implemented the dashboard, the data pipeline and the report. Etienne Duerig contributed cartographic feedback and reviewed the report draft.
+**Individual contributions.** Lukas Buchmann implemented the dashboard and reviewed the report draft. Etienne Duerig implemented the data pipeline and wrote the report.
 
 **AI use.** Code scaffolding, the synthetic-data generator, polish iterations and a first pass of this report were produced with the assistance of an Anthropic Claude model. All generated code was reviewed line-by-line before commit; the cartographic choices, the storytelling structure and the selection of the Phase-2 extension are the authors' own. No text from @meier2020 is reproduced verbatim.
 

@@ -102,6 +102,12 @@ animation_server <- function(id, filtered, processed) {
       is_playing(FALSE)
       sel_bird(NULL)
       updateSliderInput(session, "doy", value = 100)
+      # Reset the layer flip: show Path resamples, hide Current day, and
+      # rearm anim_started so the next Play press flips again.
+      leafletProxy(ns("anim_map")) %>%
+        showGroup("Path resamples") %>%
+        hideGroup("Current day")
+      anim_started(FALSE)
     })
 
     observe({
@@ -171,12 +177,29 @@ animation_server <- function(id, filtered, processed) {
         addLayersControl(
           overlayGroups = c("Path resamples",
                             "Migration uncertainty",
-                            "Moving trail",
-                            "Current day",
-                            "Selected bird"),
+                            "Current day"),
           options = layersControlOptions(collapsed = FALSE,
-                                         autoZIndex = FALSE))
+                                         autoZIndex = FALSE)) |>
+        # Initial visibility: only Path resamples on. Migration uncertainty
+        # is toggled off by default; Current day appears once Play is hit.
+        hideGroup("Migration uncertainty") |>
+        hideGroup("Current day")
     })
+
+    # ---- Layer flip on Play -----------------------------------------------
+    # Every Play press re-activates the Current day layer. The first Play
+    # additionally hides Path resamples for good. Pause / Reset never touch
+    # either group, so the current-day view persists across pauses.
+    anim_started <- reactiveVal(FALSE)
+    observeEvent(is_playing(), {
+      if (!isTRUE(is_playing())) return()    # only react to play starts
+      proxy <- leafletProxy(ns("anim_map"))
+      proxy %>% showGroup("Current day")     # always: turn Current day on
+      if (!isTRUE(anim_started())) {
+        proxy %>% hideGroup("Path resamples")
+        anim_started(TRUE)
+      }
+    }, ignoreInit = TRUE)
 
     # ---- Map legend (adapts to "Color by") ---------------------------------
     observe({
@@ -210,7 +233,7 @@ animation_server <- function(id, filtered, processed) {
       # Phase-aware alpha: breeding/wintering points are dense -> lower alpha;
       # migration points are sparse -> a bit brighter. All translucent enough
       # that overlapping dots remain visible.
-      df$alpha <- ifelse(df$phase == "migration", 0.55, 0.28)
+      df$alpha <- ifelse(df$phase == "migration", 0.45, 0.22)
 
       # Layer 1 - migration uncertainty "shadow strokes".
       mig <- df[df$phase == "migration" &
@@ -305,7 +328,7 @@ animation_server <- function(id, filtered, processed) {
           data    = trail_sf,
           color   = ~col,
           weight  = 2.2,
-          opacity = 0.70,
+          opacity = 0.40,
           group   = "Moving trail",
           options = pathOptions(interactive = FALSE, pane = "paneTrail"))
       }
@@ -321,7 +344,7 @@ animation_server <- function(id, filtered, processed) {
         color       = "#1a1a1a",
         weight      = 0.5,
         fillColor   = ~col,
-        fillOpacity = 0.85,
+        fillOpacity = 0.35,
         group       = "Moving trail",
         label       = ~paste(bird_id, "-", format(date, "%d %b %Y")),
         options     = pathOptions(pane = "paneTrail", interactive = FALSE))
@@ -347,7 +370,7 @@ animation_server <- function(id, filtered, processed) {
         color       = "#1a1a1a",
         weight      = 0.9,
         fillColor   = cur_col,
-        fillOpacity = 0.82,           # slightly translucent
+        fillOpacity = 0.70,           # slightly translucent
         group       = "Current day",
         label       = ~paste(bird_id, "-", country, "-",
                              format(date, "%d %b %Y")),
