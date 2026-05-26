@@ -38,13 +38,16 @@ animation_ui <- function(id) {
         full_screen = TRUE,
         leafletOutput(ns("anim_map"), height = "65vh"),
         div(class = "plot-caption",
-            "Trans-Saharan annual cycle of Alpine Swifts. ",
-            "Each dot is one retained daily fix (alpha-blended path ",
-            "resamples); brighter circles mark the slider's current ",
-            "day. Vertical strokes show the per-bird 10-90 percentile ",
-            "latitudinal uncertainty band during migration. ",
-            "Toggle layers top-right; click a dot to highlight that ",
-            "bird; click again to deselect.")
+            paste0(
+              "Trans-Saharan annual cycle of Alpine Swifts. ",
+              "Each dot is one retained daily fix (alpha-blended path resamples); ",
+              "brighter circles mark the slider\u2019s current day. ",
+              "Vertical strokes show the per-bird 10\u201390 percentile ",
+              "latitudinal uncertainty band during migration. ",
+              "Toggle layers top-right; click a dot to highlight that ",
+              "bird; click again to deselect."
+            )
+        )
       ),
       card(
         card_header(span("Playback Controls",
@@ -81,10 +84,14 @@ animation_ui <- function(id) {
              card(card_header("Latitude of active individuals"),
                   plotlyOutput(ns("anim_lat_curve"), height = "260px"),
                   div(class = "plot-caption",
-                      "Boxplot of latitude (degrees N) for every bird ",
-                      "active on the slider's day-of-year, grouped by ",
-                      "the active 'Color by' category. Whiskers extend ",
-                      "to 1.5x IQR; jitter points show individual fixes."))
+                      paste0(
+                        "Boxplot of latitude (degrees N) for every bird ",
+                        "active on the slider's day-of-year, grouped by ",
+                        "the active 'Color by' category. Whiskers extend ",
+                        "to 1.5x IQR; jitter points show individual fixes."
+                      )
+                  )
+             )
       )
     )
   )
@@ -102,8 +109,6 @@ animation_server <- function(id, filtered, processed) {
       is_playing(FALSE)
       sel_bird(NULL)
       updateSliderInput(session, "doy", value = 100)
-      # Reset the layer flip: show Path resamples, hide Current day, and
-      # rearm anim_started so the next Play press flips again.
       leafletProxy(ns("anim_map")) %>%
         showGroup("Path resamples") %>%
         hideGroup("Current day")
@@ -112,8 +117,6 @@ animation_server <- function(id, filtered, processed) {
 
     observe({
       if (!is_playing()) return()
-      # Slower base tick (300 ms) so the user has time to react to Pause and
-      # the displayed current-day marker stays in sync with the slider.
       invalidateLater(300)
       isolate({
         cur  <- input$doy %||% 100
@@ -124,15 +127,12 @@ animation_server <- function(id, filtered, processed) {
       })
     })
 
+    # FIX: throttle increased from 350 to 600ms so renderPlotly has time
+    # to finish before the next animation tick invalidates it again.
     plot_doy <- reactive({ as.numeric(input$doy %||% 100) }) |>
-      shiny::throttle(350)
+      shiny::throttle(600)
 
-    # ---- Current-frame slice (used for highlight + latitude plot) ----------
-    # Tight +/- 1 day window: we want the visible current-day dot to actually
-    # match the slider's day. With daily aggregation there is at most one row
-    # per (bird, date), so the slice picks the bird's nearest fix within that
-    # 3-day window centred on d_f. Birds with no fix in the window simply do
-    # not appear for that frame - which is the honest representation.
+    # ---- Current-frame slice (used for map highlight only) -----------------
     current_frame_data <- reactive({
       df <- filtered$daily()
       if (is.null(df) || nrow(df) == 0) return(NULL)
@@ -168,7 +168,6 @@ animation_server <- function(id, filtered, processed) {
                  options = tileOptions(opacity = 0.9)) |>
         fitBounds(lng1 = MAP_BOUNDS$lng1, lat1 = MAP_BOUNDS$lat1,
                   lng2 = MAP_BOUNDS$lng2, lat2 = MAP_BOUNDS$lat2) |>
-        # Panes: higher zIndex = drawn on top. Current day = top.
         addMapPane("paneShadow",    zIndex = 380) |>
         addMapPane("paneTrail",     zIndex = 410) |>
         addMapPane("paneResamples", zIndex = 425) |>
@@ -180,21 +179,16 @@ animation_server <- function(id, filtered, processed) {
                             "Current day"),
           options = layersControlOptions(collapsed = FALSE,
                                          autoZIndex = FALSE)) |>
-        # Initial visibility: only Path resamples on. Migration uncertainty
-        # is toggled off by default; Current day appears once Play is hit.
         hideGroup("Migration uncertainty") |>
         hideGroup("Current day")
     })
 
-    # ---- Layer flip on Play -----------------------------------------------
-    # Every Play press re-activates the Current day layer. The first Play
-    # additionally hides Path resamples for good. Pause / Reset never touch
-    # either group, so the current-day view persists across pauses.
+    # ---- Layer flip on Play ------------------------------------------------
     anim_started <- reactiveVal(FALSE)
     observeEvent(is_playing(), {
-      if (!isTRUE(is_playing())) return()    # only react to play starts
+      if (!isTRUE(is_playing())) return()
       proxy <- leafletProxy(ns("anim_map"))
-      proxy %>% showGroup("Current day")     # always: turn Current day on
+      proxy %>% showGroup("Current day")
       if (!isTRUE(anim_started())) {
         proxy %>% hideGroup("Path resamples")
         anim_started(TRUE)
@@ -215,9 +209,6 @@ animation_server <- function(id, filtered, processed) {
     })
 
     # ---- Always-on path resamples (figure-1 dot cloud) ---------------------
-    # Repaints when the *data filter* or the *colour mode* changes, but the
-    # visible *set of points* is determined only by the data filter -> the
-    # "Color by" radio only changes the colours, not the visible dots.
     observe({
       df <- filtered$daily()
       gm <- filtered$group_mode()
@@ -229,13 +220,8 @@ animation_server <- function(id, filtered, processed) {
 
       pal <- resolve_palette(df, gm)
       df$col <- pal$col
-
-      # Phase-aware alpha: breeding/wintering points are dense -> lower alpha;
-      # migration points are sparse -> a bit brighter. All translucent enough
-      # that overlapping dots remain visible.
       df$alpha <- ifelse(df$phase == "migration", 0.45, 0.22)
 
-      # Layer 1 - migration uncertainty "shadow strokes".
       mig <- df[df$phase == "migration" &
                   is.finite(df$lat_lo) & is.finite(df$lat_hi) &
                   (df$lat_hi - df$lat_lo) > 0.05, , drop = FALSE]
@@ -257,7 +243,6 @@ animation_server <- function(id, filtered, processed) {
           options = pathOptions(interactive = FALSE, pane = "paneShadow"))
       }
 
-      # Layer 2 - path-resample dot cloud (delimiter "##" cannot appear in IDs)
       proxy %>% addCircleMarkers(
         data        = df,
         lng         = ~lon,
@@ -274,7 +259,7 @@ animation_server <- function(id, filtered, processed) {
         options     = pathOptions(pane = "paneResamples"))
     })
 
-    # ---- Moving-point trail (sperm trail) ----------------------------------
+    # ---- Moving-point trail ------------------------------------------------
     observe({
       proxy <- leafletProxy(ns("anim_map")) %>%
         clearGroup("Moving trail")
@@ -285,9 +270,6 @@ animation_server <- function(id, filtered, processed) {
       if (is.null(df) || nrow(df) == 0) return()
 
       d_f <- plot_doy()
-      # Anchor the trail at each bird's NEAREST fix to d_f using the same
-      # +/- 1 day window that current_frame_data() uses, so the polyline
-      # ends exactly at the bright current-day marker.
       cur_anchor <- df %>%
         dplyr::filter(abs(doy - d_f) <= 1) %>%
         dplyr::group_by(bird_id, year) %>%
@@ -313,7 +295,6 @@ animation_server <- function(id, filtered, processed) {
                                             year    = as.character(paths$year))])
       paths$col[is.na(paths$col)] <- "#999999"
 
-      # 1. Polylines: connect each bird-year's last trail_n daily fixes.
       groups <- split(paths, paste(paths$bird_id, paths$year, sep = "|"))
       groups_for_line <- groups[vapply(groups, nrow, integer(1)) >= 2L]
       if (length(groups_for_line) > 0) {
@@ -333,9 +314,6 @@ animation_server <- function(id, filtered, processed) {
           options = pathOptions(interactive = FALSE, pane = "paneTrail"))
       }
 
-      # 2. Small dots: one per fix in the trail (smaller than the bright
-      #    current-day marker, larger than the path-resample dots, so the
-      #    trail reads as the bird's recent trajectory).
       proxy %>% addCircleMarkers(
         data        = paths,
         lng         = ~lon,
@@ -350,7 +328,7 @@ animation_server <- function(id, filtered, processed) {
         options     = pathOptions(pane = "paneTrail", interactive = FALSE))
     })
 
-    # ---- Current-day "latest data points" highlight (ALWAYS ON TOP) --------
+    # ---- Current-day highlight (ALWAYS ON TOP) ------------------------------
     observe({
       cur <- current_frame_data()
       proxy <- leafletProxy(ns("anim_map")) %>%
@@ -370,24 +348,20 @@ animation_server <- function(id, filtered, processed) {
         color       = "#1a1a1a",
         weight      = 0.9,
         fillColor   = cur_col,
-        fillOpacity = 0.70,           # slightly translucent
+        fillOpacity = 0.70,
         group       = "Current day",
         label       = ~paste(bird_id, "-", country, "-",
                              format(date, "%d %b %Y")),
         options     = pathOptions(pane = "paneCurrent"))
     })
 
-    # ---- Selected-bird highlight (click toggles selection) -----------------
+    # ---- Selected-bird highlight --------------------------------------------
     observeEvent(input$anim_map_marker_click, {
       m <- input$anim_map_marker_click
       if (is.null(m) || is.null(m$id)) return()
       lid <- as.character(m$id)
       parts <- strsplit(lid, "##", fixed = TRUE)[[1]]
-      # Layout: "pr"  -> ["pr",  bird_id, year, doy]
-      #         "cur" -> ["cur", bird_id, year]
-      #         "sel" -> ["sel", bird_id, year, yyyymmdd]
       bird <- if (length(parts) >= 2) parts[2] else lid
-      # Toggle: second click on the same bird clears the selection.
       if (!is.null(sel_bird()) && identical(sel_bird(), bird)) {
         sel_bird(NULL)
       } else {
@@ -424,8 +398,6 @@ animation_server <- function(id, filtered, processed) {
         data        = track,
         lng         = ~lon,
         lat         = ~lat,
-        # layerId encodes the same bird so a second click on any yellow
-        # waypoint triggers the toggle handler and deselects.
         layerId     = ~paste("sel", bird_id, year,
                              format(date, "%Y%m%d"), sep = "##"),
         radius      = 4,
@@ -438,14 +410,14 @@ animation_server <- function(id, filtered, processed) {
         options     = pathOptions(pane = "paneSelected"))
     })
 
-    # ---- Selected bird details card ---------------------------------------
+    # ---- Selected bird details card ----------------------------------------
     output$bird_card <- renderUI({
       bird <- sel_bird()
       if (is.null(bird)) {
         return(div(class = "small text-muted",
-                   "Click any dot on the map to highlight that bird's ",
-                   "full track and see its details here. Click the same ",
-                   "bird again to clear the selection."))
+                   paste0("Click any dot on the map to highlight that bird's ",
+                          "full track and see its details here. Click the same ",
+                          "bird again to clear the selection.")))
       }
       df <- filtered$daily()
       track <- df[df$bird_id == bird, , drop = FALSE]
@@ -480,22 +452,45 @@ animation_server <- function(id, filtered, processed) {
     })
     observeEvent(input$clear_sel, { sel_bird(NULL) })
 
-    # ---- Latitude-of-active-individuals plot (single chart) ----------------
+    # ---- Latitude-of-active-individuals plot --------------------------------
+    # FIX: slice directly inside renderPlotly using plot_doy() so the
+    # reactive dependency is explicit and every throttled tick triggers
+    # a re-render. Previously relying on current_frame_data() caused
+    # Shiny to skip intermediate invalidations during fast animation.
     output$anim_lat_curve <- renderPlotly({
-      cur <- current_frame_data()
-      shiny::validate(need(!is.null(cur) && nrow(cur) > 0,
-                           "No active individuals on this day."))
-      pal_cols <- attr(cur, "palette_colors")
+      d_f <- plot_doy()   # explicit dependency — must be first
+
+      df <- filtered$daily()
+      shiny::validate(need(!is.null(df) && nrow(df) > 0,
+                           "No data for current filter selection."))
+
+      cur <- df %>%
+        dplyr::filter(abs(doy - d_f) <= 1) %>%
+        dplyr::group_by(bird_id, year) %>%
+        dplyr::slice(which.min(abs(doy - d_f))) %>%
+        dplyr::ungroup()
+
+      shiny::validate(need(nrow(cur) > 0, "No active individuals on this day."))
+
+      gm <- filtered$group_mode()
+      pal <- resolve_palette(cur, gm)
+      cur$group_col <- switch(gm,
+                              country = cur$country,
+                              colony  = cur$colony_name,
+                              flyway  = cur$flyway,
+                              year    = as.character(cur$year))
+
       p <- ggplot(cur, aes(x = group_col, y = lat, fill = group_col)) +
         geom_boxplot(alpha = 0.7, outlier.shape = NA) +
         geom_jitter(width = 0.2, size = 1.5, alpha = 0.7) +
-        scale_fill_manual(values = pal_cols) +
+        scale_fill_manual(values = pal$colors) +
         scale_y_continuous(limits = c(-15, 60)) +
         labs(x = NULL, y = "Latitude (degrees N)") +
         theme_minimal(base_size = 11) +
         theme(legend.position = "none",
               panel.grid.minor = element_blank())
-      ggplotly(p) %>% plotly::config(displayModeBar = TRUE)
+
+      ggplotly(p) %>% plotly::config(displayModeBar = FALSE)
     })
 
     observeEvent(is_playing(), {

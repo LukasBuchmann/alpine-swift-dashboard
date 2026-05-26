@@ -154,18 +154,25 @@ render_map_legend <- function(pal, extra_row = NULL) {
       '<div class="map-legend"><div class="legend-title">No data</div></div>'))
   }
   rows <- mapply(function(lvl, col) {
-    sprintf('<div class="legend-row"><span class="legend-swatch" style="background:%s"></span>%s</div>',
-            col, htmltools::htmlEscape(lvl))
+    sprintf(
+      '<div style="display:flex;align-items:center;margin-bottom:4px;">
+         <span style="display:inline-block;width:12px;height:12px;border-radius:50%%;
+                      background:%s;margin-right:6px;flex-shrink:0;"></span>
+         <span>%s</span>
+       </div>',
+      col, htmltools::htmlEscape(lvl))
   }, pal$levels, pal$colors, USE.NAMES = FALSE)
+
   htmltools::HTML(sprintf(
-    '<div class="map-legend">
-       <div class="legend-title">%s</div>
+    '<div style="background:white;padding:8px 10px;border-radius:4px;
+                 box-shadow:0 1px 4px rgba(0,0,0,.25);min-width:120px;
+                 font-size:12px;line-height:1.4;">
+       <div style="font-weight:600;margin-bottom:6px;">%s</div>
        %s
        %s
      </div>',
     pal$title,
     paste(rows, collapse = "\n"),
-    if (is.null(extra_row)) "" else
-      paste0("<hr/>", extra_row)
+    if (is.null(extra_row)) "" else paste0("<hr style='margin:4px 0'/>", extra_row)
   ))
 }

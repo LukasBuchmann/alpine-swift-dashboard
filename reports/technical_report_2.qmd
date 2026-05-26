@@ -1,0 +1,159 @@
+---
+title: "Alpine Swift Migration Dashboard - Technical Report"
+subtitle: "CCES FS26 - Interactive Environmental Data Dashboard"
+author:
+  - name: "Lukas Buchmann"
+    affiliation: "ZHAW - Environmental Science"
+  - name: "Etienne Duerig"
+    affiliation: "ZHAW - Environmental Science"
+date: today
+abstract: |
+  This report documents an interactive R Shiny dashboard that visualises
+  the trans-Saharan migration of the Alpine Swift (*Tachymarptis melba*).
+  Light-level geolocator tracks for up to 215 individuals from nine colonies
+  across four populations in Europe are used as the data basis for the dashboard.
+  The dashboard follows the geovisual analytics framework and aims to provide
+  a tool for in-depth exploration of this dataset. Key functionalities include
+  a temporal animation of migration across the annual cycle, linked statistical
+  views, and interactive filtering by population and migration path (flyway)
+
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    number-sections: true
+    code-fold: true
+    fig-cap-location: bottom
+    theme: cosmo
+  pdf:
+    toc: true
+    toc-depth: 2
+    number-sections: true
+    fig-cap-location: bottom
+    geometry:
+      - margin=2.5cm
+    documentclass: article
+    include-before-body:
+      text: |
+        \newpage
+    include-in-header:
+      text: |
+        \usepackage{afterpage}
+        \usepackage{float}
+        \usepackage{url}
+        \AtBeginDocument{\afterpage{\clearpage}}
+execute:
+  echo: true
+  warning: false
+  message: false
+  cache: false
+bibliography: references.bib
+link-citations: true
+---
+
+\newpage
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = normalizePath(".."))
+suppressPackageStartupMessages({
+  library(dplyr); library(ggplot2); library(readr); library(sf)
+  library(lubridate); library(scales); library(viridisLite)
+})
+COUNTRY_COLORS <- c(Switzerland = "#1B9E77", Spain = "#D95F02",
+                    Bulgaria   = "#7570B3", Turkey = "#E7298A")
+```
+
+\newpage
+
+# Dashboard Context and Goals
+
+The Alpine Swift (*Tachymarptis melba*) is a small aerial insectivore that spends the majority of its life airborne. The species is capable of completing trans-Saharan migration in approximately one week, which represents one of the shortest migration durations recorded among long-distance migrants [@meier2020]. Between 2014 and 2016, the Swiss Ornithological Institute conducted a long-term tracking study of the trans-Saharan migratory cycle using light-level geolocators. Individuals from four populations were tagged along a twelve-degree latitudinal gradient: Pirasali Island (Turkey), Tarragona (Spain), Sofia (Bulgaria), and multiple colonies in Switzerland. The principal finding of @meier2020 is that eastern and western populations follow two geographically distinct flyways across the Sahara, with the western populations migrating via the Iberian Peninsula and the eastern populations via Egypt. Furthermore, more southern colonies depart for their wintering grounds later in autumn, while more northern colonies depart from their wintering grounds later in spring, resulting in a breeding season up to 48 days shorter for the northernmost population relative to the southernmost [@meier2020]. The dashboard presented here provides an interactive analysis tool for exploring this dataset and following the geovisiual analytics approach. As animation is one of the core interactions in geovisual analytics (derived from slides) and therefore comes very naturally as an extention topic and is of great us when it comes to visualize seasonally dependent migration and movement in generall. 
+
+# Data
+
+The dashboard is built upon data collected during the above-mentioned long-term research project. The dataset comprises 215 tagged Alpine Swift individuals from nine colonies: six located in Switzerland and one each in Turkey, Spain, and Bulgaria. Individual positions were estimated using light-level geolocators, which record ambient light levels twice daily and derive geographic position from local sunrise and sunset times [@meier2020]. The data are hosted as nine separate datasets on the Movebank Data Repository, with each dataset containing the complete three-year tracking record for one colony [@meier2020data_bulgaria; @meier2020data_turkey; @meier2020data_spain;
+@meier2020data_baden; @meier2020data_lenzburg; @meier2020data_luzern;
+@meier2020data_biel; @meier2020data_solothurn; @meier2020data_lausanne]. The combined dataset totals 268'158 individual position fixes. It should be noted that no position data are available for the summer breeding period. During this phase, repeated entry and exit of nest cavities introduces shading events that are indistinguishable from sunrise and sunset, rendering position estimates unreliable.
+
+# Storytelling Concept and Intended Insights
+
+The aim of geovisual analytics is to detect the expected while enabling the discovery of the unexpected [@thomas2005]. To support this, the geovisual analytics approach follows Shneiderman's information-seeking mantra, which prescribes first providing an overview of the complete dataset, then offering utilities for zooming and filtering, and finally enabling access to additional details on demand [@shneiderman1996]. The storytelling concept of this dashboard follows this structure. The initial view is intended to convey that seasonal migration occurs between Europe and Africa, and that two primary flyways exist, one via the Iberian Peninsula and one via Egypt. Subsequent filtering and zooming interactions are designed to allow users to observe that higher-latitude colonies depart earlier in autumn and return later in spring. Beyond these primary findings, the dashboard is intended to support open-ended exploration of additional patterns within the data.
+
+To guide the dashboard design, the Cairo Visualisation Wheel was applied as a conceptual framework [@cairo2012]. This tool allows a visualisation designer to evaluate a product along six dimensions and assess whether it tends toward greater complexity and analytical depth or toward greater simplicity and accessibility. A schematic of the wheel is provided in @fig-cairo-wheel. It is argued here that a dashboard intended for geovisual analytics should position itself toward the complex and analytical end of the spectrum. The following design positions were adopted based on this reasoning.
+
+![The Visualisation Wheel proposed by @cairo2012 allows evaluation of a visualisation along six dimensions. Each axis represents a trade-off between two opposing design priorities.](images/cairo_wheel.png){#fig-cairo-wheel width=70% fig-pos="H"}
+
+**Multidimensionality – Unidimensionality:** The dashboard is designed to allow examination of the data from multiple analytical perspectives. Users are able to reclassify observations along the temporal dimension as well as by categorical attributes such as flyway membership or colony of origin.
+
+**Density – Lightness:** Available screen space is used densely, with a large volume of individual position fixes displayed simultaneously to support pattern recognition across the full dataset.
+
+**Functionality – Decoration:** The intended audience consists of specialists with an interest in the underlying scientific data. Decorative elements are therefore omitted in favour of an objective and information-dense presentation.
+
+**Originality – Familiarity:** Familiar visualisation forms, including animated point maps, line charts and boxplots, are preferred over novel representations. Familiar graphics reduce the cognitive overhead required for interpretation and lower the risk of misreading the data. It is worth pointing out that familiar visualisation types push the dashboard towards a more intelligible and shallower visualisation product, which is opposing our argumentation, however we believe that this choice is justified given that this facilitates interpretability.
+
+# Key Dashboard Functionalities
+
+## Spatial Map
+
+The central element of the dashboard is an interactive map, which serves a dual purpose as both a static data display and an animation canvas.
+
+![Static view of the spatial map providing a dataset overview upon initial load.](images/static_map.png){#fig-spatial-map width=85% fig-pos="H"}
+
+In its default static state, the map displays all retained daily position fixes simultaneously, as shown in @fig-spatial-map. This implements the "overview first" principle of Shneiderman's mantra: upon entering the dashboard, the user is immediately presented with a comprehensive spatial overview from which the two flyways and the European–African migration corridor can be identified.
+
+When a temporal animation is active, the map transitions to display the positional development of tracked individuals over the course of the annual cycle, as illustrated in @fig-spatial-map-animation.
+
+![The spatial map during playback of the temporal animation.](images/animated_map.png){#fig-spatial-map-animation width=85% fig-pos="H"}
+
+## Filter Menu
+
+The filter menu enables restriction of the displayed data by various attributes. Individual colonies can be selected or deselected via a dropdown menu, and a year slider controls which annual tracking periods are included. Pre-configured quick filters are provided for common analytical tasks. In particular, the western and eastern flyways can be selected with a single action. This functionality is designed to guide users toward the primary narrative insight, namely the existence of two geographically distinct migration corridors. An example of the quick filter and year-based colouring in use is shown in @fig-quick-filter-and-year.
+
+## Attribute Selection Menu
+
+Below the filter menu, a separate control allows users to colour position fixes according to a selected attribute, enabling visual stratification of the data by country of origin, colony, flyway, or year. This attribute selection menue links to cairos dimension of unidimensionality-multidimensionality as it allows a multidimensional view onto the data. Country, colony and flyway are nominal attributes and are therefore encoded using a qualitative ColorBrewer palette. @fig-quick-filter-and-year illustrates the map coloured by year membership following application of the western flyway quick filter.
+
+![Static map view showing only western flyway datapoints following application of the quick filter. Position fixes are coloured by year of recording using a sequential colour scheme.](images/western_flyway_filter_year.png){#fig-quick-filter-and-year width=85% fig-pos="H"}
+
+### Integration into Animation
+
+Both the filter menu and the attribute selection menu remain active during animation playback. @fig-attr-and-filter-animation provides an example with the western flyway filter active and colouring applied by country of origin.
+
+![Filter and attribute selection applied during animation. Displayed fixes are restricted to the western flyway and coloured by country of origin.](images/filter-and-attribute.png){#fig-attr-and-filter-animation width=85% fig-pos="H"}
+
+## Geovisual Analytics Interactions
+
+The dashboard implements several of the canonical geovisual analytics interactions.
+
+**Panning, zooming, and navigation** are provided through the interactive map, allowing users to adjust the spatial extent and level of detail.
+
+**Brushing and mouseover:** Hovering over any position fix displays a tooltip containing the individual tag identifier, geographic coordinates, colony membership, and date of recording.
+
+**Linked views:** Two plots are linked to the spatial map. A set of boxplots displays the current latitudinal distribution of active individuals grouped by the selected attribute, and updates dynamically during animation playback (@fig-boxplot). A static line plot displays the latitudinal position of each tracked individual across the full annual cycle, with lines coloured by the selected grouping attribute (@fig-lineplot). This plot is particularly central to the intended narrative, as it visualises that more northern populations of alpine swift leave europe earlier and depart from africa at a later point, when compared with more southern populations. 
+
+![Boxplots displaying the latitudinal distribution of individuals during animation, coloured by country of origin. Individual points represent single tracked birds.](images/boxplots_of_latitude.png){#fig-boxplot width=95% fig-pos="H"}
+
+![Static line plot displaying the latitudinal position of each tracked individual across the annual cycle. Each line corresponds to one individual. Colouring is applied by country of origin. It is visible that individuals from switzerland leave their wintering ground in africa later and leave their breading ground in europe earlier when compared to spanish individuals. ](images/latitude_lineplot_static.png){#fig-lineplot width=95% fig-pos="H"}
+
+
+Both Boxplots aswell as line plots are well known and easy to read visualisation types which was specifically choosen to be conform with your decission to lean towards familiarity in cairos Familiarity-Originality dimension.
+
+**Animation:** The dashboard supports server-driven temporal animation of position fixes across the day-of-year axis. An optional moving-point trail can be toggled, displaying each individual's trajectory over the preceding one, three, or seven days, as visible in @fig-spatial-map-animation.
+
+# Individual Contributions
+
+Lukas Buchmann was responsible for the implementation of the dashboard and reviewed the report. Etienne Duerig implemented the data processing pipeline and authored the report.
+
+# Declaration of AI Use
+
+The large language models Claude Sonnet 4.6 and Claude Opus 4.5 were used as tools in this project. The models assisted with the generation of dashboard code, including sections produced through a prompt-to-code workflow in which the model was tasked with implementing specific functionality autonomously. Additional code sections were written manually. The models were further employed for code debugging, spelling correction, and formatting of the Quarto report. All generated code was reviewed before integration into the project.
+
+
+\newpage
+
+
+# References {.unnumbered}
+
+::: {#refs}
+:::
+

@@ -18,12 +18,15 @@ phenology_ui <- function(id) {
   tagList(
     h6("Latitude across the annual cycle", class = "panel-subheading"),
     plotlyOutput(ns("lat_doy"), height = "360px"),
-    div(class = "plot-caption",
-        "Latitude (degrees N) across the annual cycle. Each thin ",
-        "line is one bird-year. Steep descents = autumn migration; ",
-        "ascents = spring return. Lines are split where the tracker ",
-        "had no fix for more than 14 days, so no fake interpolation ",
-        "is drawn across gaps.")
+div(class = "plot-caption",
+    paste0(
+      "Latitude (degrees N) across the annual cycle. Each thin ",
+      "line is one bird-year. Steep descents = autumn migration; ",
+      "ascents = spring return. Lines are split where the tracker ",
+      "had no fix for more than 14 days, so no fake interpolation ",
+      "is drawn across gaps."
+    )
+    )
   )
 }
 
