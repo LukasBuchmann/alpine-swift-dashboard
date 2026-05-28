@@ -57,7 +57,7 @@ filters_server <- function(id, processed) {
       df |> dplyr::filter(colony_name %in% sel, year %in% sel_years())
     })
 
-    # RESTORED: The phenology reactive filter
+    # The phenology reactive filter
     filtered_phenology <- reactive({
       req(processed$phenology)
       sel <- input$country
@@ -73,7 +73,7 @@ filters_server <- function(id, processed) {
 
     list(
       daily      = scope_data,
-      phenology  = filtered_phenology, # <--- Added back here!
+      phenology  = filtered_phenology,
       years      = sel_years,
       group_mode = reactive(input$group_mode)
     )

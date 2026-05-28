@@ -2,15 +2,15 @@
 
 This dashboard visualises the trans-Saharan migration of the Alpine Swift
 (*Tachymarptis melba*, formerly *Apus melba*) - one of the fastest non-stop
-long-distance migrants known. Light-level geolocator tracks come from four
-populations along a 12-degree latitudinal gradient across the western
+long-distance migrants known. Light-level geolocator tracks come from nine
+populations across four countries along a 12-degree latitudinal gradient across the western
 Palaearctic.
 
 ### Scope
 
 - **Spatial extent.** Europe, the Sahara, West and Central Africa
   (~18 deg W to 45 deg E, ~5 deg N to 55 deg N).
-- **Temporal extent.** 2014 - 2016 annual cycles.
+- **Temporal extent.** 2014 - 2017 annual cycles.
 - **Populations.** Switzerland (Baden, Biel, Lausanne, Lenzburg, Luzern,
   Solothurn - western flyway), Spain (Tarragona - western), Bulgaria
   (Sofia - eastern), Turkey (Pirasali Island - eastern).
@@ -30,8 +30,7 @@ Palaearctic.
   90th-percentile latitude. Visualises the well-known geolocator
   latitudinal error rather than hiding it under a single hard line.
 - **Moving trail (sperm trail).** Optional smaller dots connected by
-  a line, showing each bird's last 1 / 3 / 7 daily fixes ending exactly
-  on the current-day marker.
+  a line, showing each bird's last 1 / 3 / 7 daily fixes.
 - **Current day.** Brighter, slightly translucent markers for every bird
   active on the current animation day. Always rendered on top.
 - **Selected bird.** Click any dot to draw its full bird-year tracks in
@@ -58,8 +57,6 @@ Palaearctic.
   `wintering`) is taken from Movebank's `comments` column.
 - **Uncertainty band.** Per bird and year, a 7-day centred rolling
   window of the 10 / 90 percentile latitude gives `lat_lo` and `lat_hi`.
-- **No fake interpolation.** Phenology lines are split where the gap
-  between consecutive fixes exceeds 14 days.
 
 ### Cartographic design (after Slocum et al. 2009, MacEachren 1995,
 ### Cairo 2016)

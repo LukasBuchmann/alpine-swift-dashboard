@@ -111,9 +111,6 @@ build_processed_data <- function(force = FALSE) {
     ) %>%
     dplyr::ungroup()
 
-  # (Wintering territory hulls were removed at user request; the raw
-  # wintering fixes themselves convey the non-breeding distribution.)
-
   # Helper for safe min/max over a date vector
   safe_min <- function(x) {
     if (length(x) == 0 || all(is.na(x))) as.Date(NA) else min(x, na.rm = TRUE)
@@ -122,7 +119,7 @@ build_processed_data <- function(force = FALSE) {
     if (length(x) == 0 || all(is.na(x))) as.Date(NA) else max(x, na.rm = TRUE)
   }
 
-  # RESTORED: Full Phenology math so Figure 3 can calculate duration accurately
+  # Phenology math so Figure 3 can calculate duration accurately
   message("Computing per-bird phenology...")
   phenology <- daily %>%
     dplyr::group_by(bird_id, colony_id, country, flyway, year) %>%

@@ -127,7 +127,7 @@ animation_server <- function(id, filtered, processed) {
       })
     })
 
-    # FIX: throttle increased from 350 to 600ms so renderPlotly has time
+    # Throttle to 600ms so renderPlotly has time
     # to finish before the next animation tick invalidates it again.
     plot_doy <- reactive({ as.numeric(input$doy %||% 100) }) |>
       shiny::throttle(600)
@@ -453,7 +453,7 @@ animation_server <- function(id, filtered, processed) {
     observeEvent(input$clear_sel, { sel_bird(NULL) })
 
     # ---- Latitude-of-active-individuals plot --------------------------------
-    # FIX: slice directly inside renderPlotly using plot_doy() so the
+    # Slice directly inside renderPlotly using plot_doy() so the
     # reactive dependency is explicit and every throttled tick triggers
     # a re-render. Previously relying on current_frame_data() caused
     # Shiny to skip intermediate invalidations during fast animation.

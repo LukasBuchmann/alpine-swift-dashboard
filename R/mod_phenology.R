@@ -3,7 +3,6 @@
 # -----------------------------------------------------------------------------
 # Full-width latitude over the annual cycle.  Each thin coloured line is one
 # bird-year track; steep descents = autumn migration, ascents = spring return.
-# (Figure 3 / breeding-stay panel has been removed at user request.)
 # =============================================================================
 
 suppressPackageStartupMessages({

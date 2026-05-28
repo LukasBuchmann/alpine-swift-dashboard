@@ -42,8 +42,7 @@ running on real Movebank Data Repository data or on the synthetic fallback.
 +- data/processed/             # tracks_processed.rds cache
 +- reports/
 |  +- about.md                 # rendered into the dashboard's About tab
-|  +- DOWNLOAD_MOVEBANK_DATA.md
-|  +- technical_report.qmd     # full academic write-up
+|  +- technical_report_2.qmd   # full academic write-up
 |  +- references.bib
 +- www/custom.css              # dashboard styling
 ```

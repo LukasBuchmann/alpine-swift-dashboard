@@ -131,8 +131,7 @@ load_movebank_local <- function(dir = file.path("data", "raw", "movebank")) {
 
   # Ensure a `comments` column exists - data_processing.R's phase
   # classifier reads it (Movebank's own state labels: "breeding site",
-  # "non-breeding site", "migration"). Some studies / file revisions
-  # omit it, in which case it stays NA.
+  # "non-breeding site", "migration").
   if (!"comments" %in% names(combined)) {
     combined$comments <- NA_character_
   }
