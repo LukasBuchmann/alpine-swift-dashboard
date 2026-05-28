@@ -1,11 +1,14 @@
+```yaml id="fix_env_01"
 name: alpine-swift-dashboard
 
 channels:
   - conda-forge
 
 dependencies:
-  # Core R
-  - r-base=4.4
+  # R core (IMPORTANT: must be 4.3 for GIS compatibility)
+  - r-base=4.3
+
+  # Core Shiny stack
   - r-shiny
   - r-ggplot2
   - r-dplyr
@@ -14,27 +17,25 @@ dependencies:
   - r-lubridate
   - r-stringr
 
-  # Geospatial stack (Windows-compatible builds)
+  # GIS stack (compatible versions exist for R 4.3)
   - r-sf
   - r-terra
   - r-leaflet
   - r-geosphere
 
-  # Data + performance
+  # Data handling
   - r-data.table
   - r-arrow
 
-  # Shiny UI extras
+  # UI / reporting
   - r-shinydashboard
   - r-shinycssloaders
   - r-htmltools
-
-  # Reporting / Quarto support
   - r-rmarkdown
   - r-knitr
   - pandoc
 
-  # System libraries (conda-managed, cross-platform)
+  # System libs
   - gdal
   - geos
   - proj
@@ -42,7 +43,7 @@ dependencies:
   - curl
   - openssl
 
-  # Python (light dependency, optional but safe)
+  # Python (optional)
   - python=3.11
   - pip
-
+```
