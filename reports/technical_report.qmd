@@ -101,7 +101,7 @@ When a temporal animation is active, the map transitions to display the position
 
 ## Filter Menu
 
-The filter menu enables restriction of the displayed data by various attributes. Individual colonies can be selected or deselected via a dropdown menu, and a year slider controls which annual tracking periods are included. Pre-configured quick filters are provided for common analytical tasks. In particular, the western and eastern flyways can be selected with a single action. This functionality is designed to guide users toward the primary narrative insight, namely the existence of two geographically distinct migration corridors. An example of the quick filter and year-based colouring in use is shown in @fig-quick-filter-and-year.
+The filter menu enables restriction of the displayed data by various attributes. Individual colonies can be selected or deselected via a dropdown menu, and a year slider controls which annual tracking periods are included. Pre-configured quick filters are provided for common analytical tasks. In particular, the western and eastern flyways can be selected with a single action. This filtering menue enables the zoom and filter stage of Schneidermanns mantra. An example of the quick filter and year-based colouring in use is shown in @fig-quick-filter-and-year.
 
 ## Attribute Selection Menu
 
@@ -139,7 +139,7 @@ Clicking on a particular fix highlights the complete flight path of this bird ov
 
 # Individual Contributions
 
-Lukas Buchmann was responsible for the implementation of the dashboard and the data processing pipeline. Both Lukas and Etienne were involved in writing the technical report, where Etienne focused on highlighting the necessary geoviz theory and explaining the mapping of said theory onto the design choices of the dashboard. Lukas focused on describing the technical implementations of the dashboard. Both Etienne and Lukas were involved in the recording of the explanatory video and Etienne cut the video. Lukas prepared the hand-in over GitHub while Etienne set up the dashboard hosting on Hugging Face.
+Lukas Buchmann implemented the dashboard and the data processing pipeline, and took the lead in preparing the hand-in Git repository. Both Lukas and Etienne were involved in writing the technical report. Etienne focused on the geovisual analytics theory sections and the mapping of that theory onto the dashboard design decisions, while Lukas focused on describing the technical implementation. Both were involved in recording the explanatory video. Etienne performed the post-processing of the video and set up a containerised version of the dashboard for hosting on Hugging Face.
 
 # Declaration of AI Use
 
