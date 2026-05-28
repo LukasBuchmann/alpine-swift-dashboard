@@ -22,4 +22,4 @@ Another possibility is to install a conda environment using the `environment.yml
 
 ### 2) Run the application
 
-After the environment is ready, start the Shiny app by running `app.R`. You might have to wrangle with some dependency issues here and there. We are really sorry for the inconvenience. To our current knowledge, shipping dependencies is a bit of a hassle in R.
+After the environment is ready, start the Shiny app by running `app.R`.
