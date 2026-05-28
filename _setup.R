@@ -35,13 +35,10 @@ if (!is.null(.this)) {
 required_pkgs <- c(
   # Core Shiny stack
   "shiny", "bslib", "bsicons", "shinyWidgets", "markdown", "htmltools",
-
   # Data wrangling
-  "dplyr", "readr", "lubridate", "purrr",
-
+  "dplyr", "readr", "lubridate", "purrr", "rlang",   # <-- add rlang here
   # Spatial
   "sf", "leaflet", "geosphere",
-
   # Visualisation
   "ggplot2", "plotly", "scales", "viridisLite", "RColorBrewer"
 )
