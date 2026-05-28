@@ -10,8 +10,15 @@ To run the dashboard locally, follow these steps in order:
 
 First, install and activate the required dependencies using the provided Conda environment file:
 
+Linux:
 ```bash
 conda env create -f environment.yml
+conda activate alpine-swift
+```
+
+Windows:
+```bash
+conda env create -f win_env_01.yml
 conda activate alpine-swift
 ```
 
