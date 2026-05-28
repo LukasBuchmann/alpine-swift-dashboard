@@ -7,9 +7,6 @@
 *.Rproj.user
 *.Rcheck/
 
-# Data caches (regenerated on first run)
-data/processed/
-
 # Movebank credentials (never commit)
 .movebank
 movebank_credentials*
