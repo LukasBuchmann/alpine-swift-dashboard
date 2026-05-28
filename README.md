@@ -2,24 +2,20 @@
 
 An interactive R Shiny dashboard that visualises the trans-Saharan migration of the Alpine Swift (Tachymarptis melba, formerly Apus melba).
 
+## Huggingface Website
+The Dashboard is on https://rolfruettli-dashboard-alpine-swift.hf.space/.
+
 ## Quick start
 
 To run the dashboard locally, follow these steps in order:
 
-### 1) Set up the environment
+### 1) Installing Packages
 
-First, install and activate the required dependencies using the provided Conda environment file:
-
-Linux:
-```bash
-conda env create -f environment.yml
-conda activate alpine-swift
-```
+First, install and activate the required dependencies using the setup script:
 
 Windows:
-```bash
-conda env create -f win_env_01.yml
-conda activate alpine-swift
+```r
+source("_setup.R")
 ```
 
 ### 2) Run the application
@@ -27,7 +23,7 @@ conda activate alpine-swift
 After the environment is ready, start the Shiny app from R:
 
 ```r
-source("app.R")
+shiny::runApp()
 ```
 
 ## Project layout
@@ -35,6 +31,7 @@ source("app.R")
 ```
 .
 +- app.R                       # Shiny entry point
++- _setup.R                    # Windows Setup
 +- R/
 |  +- helpers.R                # palettes, basemap config, legend helpers
 |  +- data_acquisition.R       # Movebank CSV ingestion / synthetic fallback
