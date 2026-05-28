@@ -4,37 +4,49 @@ channels:
   - conda-forge
 
 dependencies:
-  # R core (IMPORTANT: must be 4.3 for GIS compatibility)
+  # -------------------------
+  # R core
+  # -------------------------
   - r-base=4.3
 
-  # Core Shiny stack
+  # -------------------------
+  # Shiny framework
+  # -------------------------
   - r-shiny
-  - r-ggplot2
+  - r-bslib
+  - r-bsicons
+  - r-shinywidgets
+  - r-markdown
+  - r-htmltools
+
+  # -------------------------
+  # Data wrangling
+  # -------------------------
   - r-dplyr
-  - r-tidyr
   - r-readr
   - r-lubridate
-  - r-stringr
+  - r-purrr
+  - r-rlang
 
-  # GIS stack (compatible versions exist for R 4.3)
+  # -------------------------
+  # Spatial (stable Windows-compatible subset)
+  # -------------------------
   - r-sf
-  - r-terra
   - r-leaflet
   - r-geosphere
 
-  # Data handling
-  - r-data.table
-  - r-arrow
+  # -------------------------
+  # Visualization
+  # -------------------------
+  - r-ggplot2
+  - r-plotly
+  - r-scales
+  - r-viridislite
+  - r-rcolorbrewer
 
-  # UI / reporting
-  - r-shinydashboard
-  - r-shinycssloaders
-  - r-htmltools
-  - r-rmarkdown
-  - r-knitr
-  - pandoc
-
-  # System libs
+  # -------------------------
+  # System / geospatial libs
+  # -------------------------
   - gdal
   - geos
   - proj
@@ -42,6 +54,15 @@ dependencies:
   - curl
   - openssl
 
-  # Python (optional)
+  # -------------------------
+  # Reporting / docs
+  # -------------------------
+  - pandoc
+  - r-rmarkdown
+  - r-knitr
+
+  # -------------------------
+  # Optional Python layer (safe)
+  # -------------------------
   - python=3.11
   - pip
