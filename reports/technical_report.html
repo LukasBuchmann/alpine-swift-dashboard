@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.31">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Lukas Buchmann">
+<meta name="author" content="Etienne Duerig">
+<meta name="dcterms.date" content="2026-05-28">
+
+<title>Alpine Swift Migration Dashboard - Technical Report</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="technical_report_files/libs/clipboard/clipboard.min.js"></script>
+<script src="technical_report_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="technical_report_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="technical_report_files/libs/quarto-html/popper.min.js"></script>
+<script src="technical_report_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="technical_report_files/libs/quarto-html/anchor.min.js"></script>
+<link href="technical_report_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="technical_report_files/libs/quarto-html/quarto-syntax-highlighting-7c69b197886ae2a34062761d21e44731.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="technical_report_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="technical_report_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="technical_report_files/libs/bootstrap/bootstrap-67270d1595a62d14f123c043d4fb2f18.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul class="collapse">
+  <li><a href="#dashboard-context-and-goals" id="toc-dashboard-context-and-goals" class="nav-link active" data-scroll-target="#dashboard-context-and-goals"><span class="header-section-number">1</span> Dashboard Context and Goals</a></li>
+  <li><a href="#data" id="toc-data" class="nav-link" data-scroll-target="#data"><span class="header-section-number">2</span> Data</a>
+  <ul class="collapse">
+  <li><a href="#data-preprocessing" id="toc-data-preprocessing" class="nav-link" data-scroll-target="#data-preprocessing"><span class="header-section-number">2.1</span> Data preprocessing</a></li>
+  </ul></li>
+  <li><a href="#project-structure" id="toc-project-structure" class="nav-link" data-scroll-target="#project-structure"><span class="header-section-number">3</span> Project structure</a></li>
+  <li><a href="#storytelling-concept-and-intended-insights" id="toc-storytelling-concept-and-intended-insights" class="nav-link" data-scroll-target="#storytelling-concept-and-intended-insights"><span class="header-section-number">4</span> Storytelling Concept and Intended Insights</a></li>
+  <li><a href="#key-dashboard-functionalities" id="toc-key-dashboard-functionalities" class="nav-link" data-scroll-target="#key-dashboard-functionalities"><span class="header-section-number">5</span> Key Dashboard Functionalities</a>
+  <ul class="collapse">
+  <li><a href="#spatial-map" id="toc-spatial-map" class="nav-link" data-scroll-target="#spatial-map"><span class="header-section-number">5.1</span> Spatial Map</a></li>
+  <li><a href="#filter-menu" id="toc-filter-menu" class="nav-link" data-scroll-target="#filter-menu"><span class="header-section-number">5.2</span> Filter Menu</a></li>
+  <li><a href="#attribute-selection-menu" id="toc-attribute-selection-menu" class="nav-link" data-scroll-target="#attribute-selection-menu"><span class="header-section-number">5.3</span> Attribute Selection Menu</a></li>
+  <li><a href="#geovisual-analytics-interactions" id="toc-geovisual-analytics-interactions" class="nav-link" data-scroll-target="#geovisual-analytics-interactions"><span class="header-section-number">5.4</span> Geovisual Analytics Interactions</a></li>
+  </ul></li>
+  <li><a href="#individual-contributions" id="toc-individual-contributions" class="nav-link" data-scroll-target="#individual-contributions"><span class="header-section-number">6</span> Individual Contributions</a></li>
+  <li><a href="#declaration-of-ai-use" id="toc-declaration-of-ai-use" class="nav-link" data-scroll-target="#declaration-of-ai-use"><span class="header-section-number">7</span> Declaration of AI Use</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul>
+<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="technical_report.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Alpine Swift Migration Dashboard - Technical Report</h1>
+<p class="subtitle lead">CCES FS26 - Interactive Environmental Data Dashboard</p>
+</div>
+
+
+<div class="quarto-title-meta-author">
+  <div class="quarto-title-meta-heading">Authors</div>
+  <div class="quarto-title-meta-heading">Affiliation</div>
+  
+    <div class="quarto-title-meta-contents">
+    <p class="author">Lukas Buchmann </p>
+  </div>
+  <div class="quarto-title-meta-contents">
+        <p class="affiliation">
+            ZHAW - Environmental Science
+          </p>
+      </div>
+    <div class="quarto-title-meta-contents">
+    <p class="author">Etienne Duerig </p>
+  </div>
+  <div class="quarto-title-meta-contents">
+        <p class="affiliation">
+            ZHAW - Environmental Science
+          </p>
+      </div>
+  </div>
+
+<div class="quarto-title-meta">
+
+      
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">May 28, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+<div>
+  <div class="abstract">
+    <div class="block-title">Abstract</div>
+    This report documents an interactive R Shiny dashboard that visualises the trans-Saharan migration of the Alpine Swift (<em>Tachymarptis melba</em>). Light-level geolocator tracks for 173 individuals from nine colonies across four populations in Europe are used as the data basis for the dashboard. The dashboard follows the geovisual analytics framework and aims to provide a tool for in-depth exploration of this dataset. Key functionalities include a temporal animation of migration across the annual cycle, linked statistical views, and interactive filtering by population and migration path (flyway).
+  </div>
+</div>
+
+
+</header>
+
+
+<div style="page-break-after: always;"></div>
+<div style="page-break-after: always;"></div>
+<section id="dashboard-context-and-goals" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> Dashboard Context and Goals</h1>
+<p>The Alpine Swift (<em>Tachymarptis melba</em>) is a small aerial insectivore that spends the majority of its life airborne. The species is capable of completing trans-Saharan migration in approximately one week, which represents one of the shortest migration durations recorded among long-distance migrants <span class="citation" data-cites="meier2020">(<a href="#ref-meier2020" role="doc-biblioref">Meier, Karaardıç, Aymı́, et al. 2020</a>)</span>. Between 2014 and 2016, the Swiss Ornithological Institute conducted a long-term tracking study of the trans-Saharan migratory cycle using light-level geolocators. Individuals from four populations were tagged along a twelve-degree latitudinal gradient: Pirasali Island (Turkey), Tarragona (Spain), Sofia (Bulgaria), and multiple colonies in Switzerland. The principal finding of <span class="citation" data-cites="meier2020">Meier, Karaardıç, Aymı́, et al. (<a href="#ref-meier2020" role="doc-biblioref">2020</a>)</span> is that eastern and western populations follow two geographically distinct flyways across the Sahara, with the western populations migrating via the Iberian Peninsula and the eastern populations via Egypt. Furthermore, more southern colonies depart for their wintering grounds later in autumn, while more northern colonies depart from their wintering grounds later in spring, resulting in a breeding season up to 48 days shorter for the northernmost population relative to the southernmost <span class="citation" data-cites="meier2020">(<a href="#ref-meier2020" role="doc-biblioref">Meier, Karaardıç, Aymı́, et al. 2020</a>)</span>. The dashboard presented here provides an interactive analysis tool for exploring these datasets and following the geovisiual analytics approach. As animation is one of the core interactions in geovisual analytics (derived from slides) and therefore comes very naturally as an extention topic and is of great us when it comes to visualize seasonally dependent migration and movement in generall.</p>
+</section>
+<section id="data" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> Data</h1>
+<p>The dashboard uses data from the long-term tracking project mentioned above, which includes data from 2014 to 2017. It covers 173 Alpine Swifts from the nine different colonies. Each bird carried a light-level geolocator which records the light twice a day and calculates the bird’s position from the timing of the sunrise and sunset <span class="citation" data-cites="meier2020">(<a href="#ref-meier2020" role="doc-biblioref">Meier, Karaardıç, Aymı́, et al. 2020</a>)</span>. The tracks for every colony are published as a separate dataset on the Movebank Data Repository <span class="citation" data-cites="meier2020data_bulgaria meier2020data_turkey meier2020data_spain meier2020data_baden meier2020data_lenzburg meier2020data_luzern meier2020data_biel meier2020data_solothurn meier2020data_lausanne">(<a href="#ref-meier2020data_bulgaria" role="doc-biblioref">Meier, Peev, et al. 2020</a>; <a href="#ref-meier2020data_turkey" role="doc-biblioref">Meier, Karaardıç, and Liechti 2020</a>; <a href="#ref-meier2020data_spain" role="doc-biblioref">Meier, Aymı́, et al. 2020</a>; <a href="#ref-meier2020data_baden" role="doc-biblioref">Meier and Liechti 2020a</a>, <a href="#ref-meier2020data_lenzburg" role="doc-biblioref">2020d</a>, <a href="#ref-meier2020data_luzern" role="doc-biblioref">2020e</a>, <a href="#ref-meier2020data_biel" role="doc-biblioref">2020b</a>, <a href="#ref-meier2020data_solothurn" role="doc-biblioref">2020f</a>, <a href="#ref-meier2020data_lausanne" role="doc-biblioref">2020c</a>)</span>. It should be noted that there are no positions for the summer breeding months. That’s because Alpine Swifts nest in dark cavities in the summer, and every time a bird ducks in or out, the sensor records a “false dusk” or “false dawn” effect which breaks down the position calculation <span class="citation" data-cites="lisovski2012">(<a href="#ref-lisovski2012" role="doc-biblioref">Lisovski and Hahn 2012</a>)</span>. <span class="citation" data-cites="meier2020">Meier, Karaardıç, Aymı́, et al. (<a href="#ref-meier2020" role="doc-biblioref">2020</a>)</span> stripped these spurious events out with the SGAT package <span class="citation" data-cites="lisovski2020">(<a href="#ref-lisovski2020" role="doc-biblioref">Lisovski et al. 2020</a>)</span> and calibrated the tags during the stationary November-February window so all devices stay comparable. You’ll also notice that the wintering points in Africa sit on a strangely regular grid. That’s not a problem of the coordinate reference system. <span class="citation" data-cites="meier2020">Meier, Karaardıç, Aymı́, et al. (<a href="#ref-meier2020" role="doc-biblioref">2020</a>)</span> processed the raw light data with the FLightR package, which doesn’t return a continuous coordinate. It splits space into cells and picks the most likely cell at each time step. During the long stationary winter, when birds stay at almost the same latitude for months, FLightR collapses the daily estimate onto the cell with the highest probability, which is what produces those aligned dots. Two well-known limits of light-level geolocation make this gridding the right call. First, latitude is recovered from day length, and day length is identical at every latitude on Earth around the spring and autumn equinoxes, so for a few weeks each year the latitude estimate is essentially undefined. <span class="citation" data-cites="meier2020">Meier, Karaardıç, Aymı́, et al. (<a href="#ref-meier2020" role="doc-biblioref">2020</a>)</span> state that “the uncertainty becomes very large, especially if a bird moves predominantly along the same latitude”. This is exactly what a swift wintering in a narrow tropical band does. The animated map shows this directly in the migration uncertainty layer, where every migration fix carries a thin vertical “uncertainty shadow” running from the 10th to the 90th percentile of latitude in a 7-day centred rolling window per bird-year, so the diffuse band widens visibly around the equinoxes. Second, the cavity-shading problem already mentioned removes many usable twilights. Collapsing the low-information leftovers onto a stationary grid is, in that context, the honest choice, because it shows the bird’s wintering territory rather than a daily walk the device could never actually measure.</p>
+<section id="data-preprocessing" class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="data-preprocessing"><span class="header-section-number">2.1</span> Data preprocessing</h2>
+<p>Before any data reaches the dashboard, a small pipeline in R/data_processing.R cleans the raw Movebank CSVs and adds the derived columns we need for the visualisation. Each fix is first labelled as breeding, migration or wintering by reading the Movebank comments column, which carries the phase classification published by <span class="citation" data-cites="meier2020">Meier, Karaardıç, Aymı́, et al. (<a href="#ref-meier2020" role="doc-biblioref">2020</a>)</span>. An airspeed filter then drops every pair of consecutive fixes that would require more than 50 km/h average ground speed to remove obvious sensor jitter according to the species cruising speed of roughly 12.6 m/s (45.4 km/h) reported in <span class="citation" data-cites="meier2020">Meier, Karaardıç, Aymı́, et al. (<a href="#ref-meier2020" role="doc-biblioref">2020</a>)</span>. The surviving fixes are collapsed to one daily-median position per bird per date, and for every bird-year a centred 7-day rolling window of the 10th and 90th latitude percentile (lat_lo, lat_hi) is computed. This is the shadow band the migration-uncertainty layer draws on the map. A per-bird phenology summary (arrival, departure, length of stay at the breeding site) is calculated last. The full processed table is cached to data/processed/tracks_processed.rds so the dashboard launches in under a second on subsequent runs.</p>
+</section>
+</section>
+<section id="project-structure" class="level1" data-number="3">
+<h1 data-number="3"><span class="header-section-number">3</span> Project structure</h1>
+<p>The dashboard is a modular R Shiny application. app.R is the entry point and sources seven files from R/: helpers.R (colour palettes, basemap configuration, legend builder), data_acquisition.R (Movebank CSV ingestion with a synthetic fallback), data_processing.R (the pipeline described above), and four UI / server modules — mod_filters.R (sidebar filters), mod_metrics.R (top-right KPI strip), mod_phenology.R (latitude-by-day-of-year plot) and mod_animation.R (integrated map, server-driven animation, click handler and on-map legend). Styling lives in www/custom.css; the raw and processed data sit under data/; the About-tab text, the bibliography and this report itself live under reports/. Cross-module communication is one-directional, flowing through the reactives returned by filters_server(), which keeps each module independently testable and the dependency graph easy to follow.</p>
+</section>
+<section id="storytelling-concept-and-intended-insights" class="level1" data-number="4">
+<h1 data-number="4"><span class="header-section-number">4</span> Storytelling Concept and Intended Insights</h1>
+<p>The aim of geovisual analytics is to detect the expected while enabling the discovery of the unexpected <span class="citation" data-cites="thomas2005">(<a href="#ref-thomas2005" role="doc-biblioref">Thomas and Cook 2005</a>)</span>. To support this, the geovisual analytics approach follows Shneiderman’s information-seeking mantra, which drescribes first providing an overview of the complete dataset, then offering utilities for zooming and filtering, and finally enabling access to additional details on demand <span class="citation" data-cites="shneiderman1996">(<a href="#ref-shneiderman1996" role="doc-biblioref">Shneiderman 1996</a>)</span>. The storytelling concept of this dashboard follows this structure. The initial view is intended to convey that seasonal migration occurs between Europe and Africa, and that two primary flyways exist, one via the Iberian Peninsula and one via Egypt. Subsequent filtering and zooming interactions are designed to allow users to observe that higher-latitude colonies depart earlier in autumn and return later in spring. Beyond these primary findings, the dashboard is intended to support open-ended exploration of additional patterns within the data.</p>
+<p>To guide the dashboard design, the Cairo Visualisation Wheel was applied as a conceptual framework <span class="citation" data-cites="cairo2012">(<a href="#ref-cairo2012" role="doc-biblioref">Cairo 2012</a>)</span>. This tool allows a visualisation designer to evaluate a product along six dimensions and assess whether it tends toward greater complexity and analytical depth or toward greater simplicity and accessibility. A schematic of the wheel is provided in <a href="#fig-cairo-wheel" class="quarto-xref">Figure&nbsp;1</a>. It is argued here that a dashboard intended for geovisual analytics should position itself toward the complex and analytical end of the spectrum. The following design positions were adopted based on this reasoning.</p>
+<div id="fig-cairo-wheel" class="quarto-float quarto-figure quarto-figure-center anchored" data-fig-pos="H">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-cairo-wheel-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="images/cairo_wheel.png" class="img-fluid figure-img" style="width:70.0%" data-fig-pos="H">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-cairo-wheel-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: The Visualisation Wheel proposed by <span class="citation" data-cites="cairo2012">Cairo (<a href="#ref-cairo2012" role="doc-biblioref">2012</a>)</span> allows evaluation of a visualisation along six dimensions. Each axis represents a trade-off between two opposing design priorities.
+</figcaption>
+</figure>
+</div>
+<p><strong>Multidimensionality – Unidimensionality:</strong> The dashboard is designed to allow examination of the data from multiple analytical perspectives. Users are able to reclassify observations along the temporal dimension as well as by categorical attributes such as flyway membership or colony of origin.</p>
+<p><strong>Density – Lightness:</strong> Available screen space is used densely, with a large volume of individual position fixes displayed simultaneously to support pattern recognition across the full dataset.</p>
+<p><strong>Functionality – Decoration:</strong> The intended audience consists of specialists with an interest in the underlying scientific data. Decorative elements are therefore omitted in favour of an objective and information-dense presentation.</p>
+<p><strong>Originality – Familiarity:</strong> Familiar visualisation forms, including animated point maps, line charts and boxplots, are preferred over novel representations. Familiar graphics reduce the cognitive overhead required for interpretation and lower the risk of misreading the data. It is worth pointing out that familiar visualisation types push the dashboard towards a more intelligible and shallower visualisation product, which is opposing our argumentation, however we believe that this choice is justified given that this facilitates interpretability.</p>
+</section>
+<section id="key-dashboard-functionalities" class="level1" data-number="5">
+<h1 data-number="5"><span class="header-section-number">5</span> Key Dashboard Functionalities</h1>
+<section id="spatial-map" class="level2" data-number="5.1">
+<h2 data-number="5.1" class="anchored" data-anchor-id="spatial-map"><span class="header-section-number">5.1</span> Spatial Map</h2>
+<p>The central element of the dashboard is an interactive map, which serves a dual purpose as both a static data display and an animation canvas.</p>
+<div id="fig-spatial-map" class="quarto-float quarto-figure quarto-figure-center anchored" data-fig-pos="H">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-spatial-map-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="images/static_map.png" class="img-fluid figure-img" style="width:85.0%" data-fig-pos="H">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-spatial-map-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Static view of the spatial map providing a dataset overview upon initial load.
+</figcaption>
+</figure>
+</div>
+<p>In its default static state, the map displays all retained daily position fixes simultaneously, as shown in <a href="#fig-spatial-map" class="quarto-xref">Figure&nbsp;2</a>. This implements the “overview first” principle of Shneiderman’s mantra: upon entering the dashboard, the user is immediately presented with a comprehensive spatial overview from which the two flyways and the European–African migration corridor can be identified.</p>
+<p>When a temporal animation is active, the map transitions to display the positional development of tracked individuals over the course of the annual cycle, as illustrated in <a href="#fig-spatial-map-animation" class="quarto-xref">Figure&nbsp;3</a>.</p>
+<div id="fig-spatial-map-animation" class="quarto-float quarto-figure quarto-figure-center anchored" data-fig-pos="H">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-spatial-map-animation-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="images/animated_map.png" class="img-fluid figure-img" style="width:85.0%" data-fig-pos="H">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-spatial-map-animation-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: The spatial map during playback of the temporal animation.
+</figcaption>
+</figure>
+</div>
+</section>
+<section id="filter-menu" class="level2" data-number="5.2">
+<h2 data-number="5.2" class="anchored" data-anchor-id="filter-menu"><span class="header-section-number">5.2</span> Filter Menu</h2>
+<p>The filter menu enables restriction of the displayed data by various attributes. Individual colonies can be selected or deselected via a dropdown menu, and a year slider controls which annual tracking periods are included. Pre-configured quick filters are provided for common analytical tasks. In particular, the western and eastern flyways can be selected with a single action. This functionality is designed to guide users toward the primary narrative insight, namely the existence of two geographically distinct migration corridors. An example of the quick filter and year-based colouring in use is shown in <a href="#fig-quick-filter-and-year" class="quarto-xref">Figure&nbsp;4</a>.</p>
+</section>
+<section id="attribute-selection-menu" class="level2" data-number="5.3">
+<h2 data-number="5.3" class="anchored" data-anchor-id="attribute-selection-menu"><span class="header-section-number">5.3</span> Attribute Selection Menu</h2>
+<p>Below the filter menu, a separate control allows users to colour position fixes according to a selected attribute, enabling visual stratification of the data by country of origin, colony, flyway, or year. This attribute selection menue links to cairos dimension of unidimensionality-multidimensionality as it allows a multidimensional view onto the data. Country, colony and flyway are nominal attributes and are therefore encoded using a qualitative ColorBrewer palette. <a href="#fig-quick-filter-and-year" class="quarto-xref">Figure&nbsp;4</a> illustrates the map coloured by year membership following application of the western flyway quick filter.</p>
+<div id="fig-quick-filter-and-year" class="quarto-float quarto-figure quarto-figure-center anchored" data-fig-pos="H">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-quick-filter-and-year-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="images/western_flyway_filter_year.png" class="img-fluid figure-img" style="width:85.0%" data-fig-pos="H">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-quick-filter-and-year-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: Static map view showing only western flyway datapoints following application of the quick filter. Position fixes are coloured by year of recording using a sequential colour scheme.
+</figcaption>
+</figure>
+</div>
+<section id="integration-into-animation" class="level3" data-number="5.3.1">
+<h3 data-number="5.3.1" class="anchored" data-anchor-id="integration-into-animation"><span class="header-section-number">5.3.1</span> Integration into Animation</h3>
+<p>Both the filter menu and the attribute selection menu remain active during animation playback. <a href="#fig-attr-and-filter-animation" class="quarto-xref">Figure&nbsp;5</a> provides an example with the western flyway filter active and colouring applied by country of origin.</p>
+<div id="fig-attr-and-filter-animation" class="quarto-float quarto-figure quarto-figure-center anchored" data-fig-pos="H">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-attr-and-filter-animation-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="images/filter-and-attribute.png" class="img-fluid figure-img" style="width:85.0%" data-fig-pos="H">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-attr-and-filter-animation-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;5: Filter and attribute selection applied during animation. Displayed fixes are restricted to the western flyway and coloured by country of origin.
+</figcaption>
+</figure>
+</div>
+</section>
+</section>
+<section id="geovisual-analytics-interactions" class="level2" data-number="5.4">
+<h2 data-number="5.4" class="anchored" data-anchor-id="geovisual-analytics-interactions"><span class="header-section-number">5.4</span> Geovisual Analytics Interactions</h2>
+<p>The dashboard implements several of the canonical geovisual analytics interactions.</p>
+<p><strong>Panning, zooming, and navigation</strong> are provided through the interactive map, allowing users to adjust the spatial extent and level of detail.</p>
+<p><strong>Brushing and mouseover:</strong> Hovering over any position fix displays a tooltip containing the individual tag identifier, geographic coordinates, colony membership, and date of recording.</p>
+<p><strong>Linked views:</strong> Two plots are linked to the spatial map. A set of boxplots displays the current latitudinal distribution of active individuals grouped by the selected attribute, and updates dynamically during animation playback (<a href="#fig-boxplot" class="quarto-xref">Figure&nbsp;6</a>). A static line plot displays the latitudinal position of each tracked individual across the full annual cycle, with lines coloured by the selected grouping attribute (<a href="#fig-lineplot" class="quarto-xref">Figure&nbsp;7</a>). This plot is particularly central to the intended narrative, as it visualises that more northern populations of alpine swift leave europe earlier and depart from africa at a later point, when compared with more southern populations.</p>
+<div id="fig-boxplot" class="quarto-float quarto-figure quarto-figure-center anchored" data-fig-pos="H">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-boxplot-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="images/boxplots_of_latitude.png" class="img-fluid figure-img" style="width:95.0%" data-fig-pos="H">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-boxplot-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;6: Boxplots displaying the latitudinal distribution of individuals during animation, coloured by country of origin. Individual points represent single tracked birds.
+</figcaption>
+</figure>
+</div>
+<div id="fig-lineplot" class="quarto-float quarto-figure quarto-figure-center anchored" data-fig-pos="H">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-lineplot-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="images/latitude_lineplot_static.png" class="img-fluid figure-img" style="width:95.0%" data-fig-pos="H">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-lineplot-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;7: Static line plot displaying the latitudinal position of each tracked individual across the annual cycle. Each line corresponds to one individual. Colouring is applied by country of origin. It is visible that individuals from switzerland leave their wintering ground in africa later and leave their breading ground in europe earlier when compared to spanish individuals.
+</figcaption>
+</figure>
+</div>
+<p>Both Boxplot as well as line plot are well known and easy to read visualisation types which was specifically choosen to be conform with our decision to lean towards familiarity in cairos Familiarity-Originality dimension.</p>
+<p><strong>Animation:</strong> The dashboard supports server-driven temporal animation of position fixes across the day-of-year axis. An optional moving-point trail can be toggled, displaying each individual’s trajectory over the preceding one, three, or seven days, as visible in <a href="#fig-spatial-map-animation" class="quarto-xref">Figure&nbsp;3</a>.</p>
+</section>
+</section>
+<section id="individual-contributions" class="level1" data-number="6">
+<h1 data-number="6"><span class="header-section-number">6</span> Individual Contributions</h1>
+<p>Lukas Buchmann was responsible for the implementation of the dashboard and reviewed the report. Etienne Duerig implemented the data processing pipeline and authored the report.</p>
+</section>
+<section id="declaration-of-ai-use" class="level1" data-number="7">
+<h1 data-number="7"><span class="header-section-number">7</span> Declaration of AI Use</h1>
+<p>The large language models Claude Sonnet 4.6 and Claude Opus 4.5 were used as tools in this project. The models assisted with the generation of dashboard code, including sections produced through a prompt-to-code workflow in which the model was tasked with implementing specific functionality autonomously. Additional code sections were written manually. The models were further employed for code debugging, spelling correction, and formatting of the Quarto report. All generated code was reviewed before integration into the project.</p>
+<div style="page-break-after: always;"></div>
+</section>
+<section id="references" class="level1 unnumbered">
+<h1 class="unnumbered">References</h1>
+<div id="refs" class="references csl-bib-body hanging-indent" role="list">
+<div id="ref-cairo2012" class="csl-entry" role="listitem">
+Cairo, Alberto. 2012. <em>The Functional Art: An Introduction to Information Graphics and Visualization</em>. New Riders. <a href="https://paul.zhdk.ch/pluginfile.php/93337/mod_resource/content/1/The%20Functional%20Art%20-%20An%20Introduction%20to%20Information%20Graphics%20and%20Visualization%20by%20Alberto%20Cairo%20%28z-lib.org%29.pdf">https://paul.zhdk.ch/pluginfile.php/93337/mod_resource/content/1/The%20Functional%20Art%20-%20An%20Introduction%20to%20Information%20Graphics%20and%20Visualization%20by%20Alberto%20Cairo%20%28z-lib.org%29.pdf</a>.
+</div>
+<div id="ref-lisovski2020" class="csl-entry" role="listitem">
+Lisovski, Simeon, Silke Bauer, Martins Briedis, et al. 2020. <span>“Light-Level Geolocator Analyses: A User’s Guide.”</span> <em>Journal of Animal Ecology</em> 89 (1): 221–36. <a href="https://doi.org/10.1111/1365-2656.13036">https://doi.org/10.1111/1365-2656.13036</a>.
+</div>
+<div id="ref-lisovski2012" class="csl-entry" role="listitem">
+Lisovski, Simeon, and Steffen Hahn. 2012. <span>“<span class="nocase">GeoLight - processing and analysing light-based geolocator data</span> in r.”</span> <em>Methods in Ecology and Evolution</em> 3 (6): 1055–59. <a href="https://doi.org/10.1111/j.2041-210X.2012.00248.x">https://doi.org/10.1111/j.2041-210X.2012.00248.x</a>.
+</div>
+<div id="ref-meier2020data_spain" class="csl-entry" role="listitem">
+Meier, Christoph M., Raül Aymı́, and Felix Liechti. 2020. <em>Data from: <span>Spain Tarragona</span> – Long Term Study on Migratory Movement of <span>Alpine</span> Swifts (<em>Apus Melba</em>)</em>. <a href="https://doi.org/10.5441/001/1.96t76sg0" class="uri">Https://doi.org/10.5441/001/1.96t76sg0</a>; Movebank Data Repository.
+</div>
+<div id="ref-meier2020" class="csl-entry" role="listitem">
+Meier, Christoph M., Hakan Karaardıç, Raül Aymı́, Strahil G. Peev, Willem Witvliet, and Felix Liechti. 2020. <span>“Population-Specific Adjustment of the Annual Cycle in a Super-Swift Trans-Saharan Migrant.”</span> <em>Journal of Avian Biology</em> 51: e02515. <a href="https://doi.org/10.1111/jav.02515">https://doi.org/10.1111/jav.02515</a>.
+</div>
+<div id="ref-meier2020data_turkey" class="csl-entry" role="listitem">
+Meier, Christoph M., Hakan Karaardıç, and Felix Liechti. 2020. <em>Data from: <span>Turkey Pirasali</span> – Long Term Study on Migratory Movement of <span>Alpine</span> Swifts (<em>Apus Melba</em>)</em>. <a href="https://doi.org/10.5441/001/1.34k562m5" class="uri">Https://doi.org/10.5441/001/1.34k562m5</a>; Movebank Data Repository.
+</div>
+<div id="ref-meier2020data_baden" class="csl-entry" role="listitem">
+Meier, Christoph M., and Felix Liechti. 2020a. <em>Data from: <span>Switzerland Baden</span> – Long Term Study on Migratory Movement of <span>Alpine</span> Swifts (<em>Apus Melba</em>)</em>. <a href="https://doi.org/10.5441/001/1.d6n476k0" class="uri">Https://doi.org/10.5441/001/1.d6n476k0</a>; Movebank Data Repository.
+</div>
+<div id="ref-meier2020data_biel" class="csl-entry" role="listitem">
+Meier, Christoph M., and Felix Liechti. 2020b. <em>Data from: <span>Switzerland Biel</span> – Long Term Study on Migratory Movement of <span>Alpine</span> Swifts (<em>Apus Melba</em>)</em>. <a href="https://doi.org/10.5441/001/1.k4g9f2n2" class="uri">Https://doi.org/10.5441/001/1.k4g9f2n2</a>; Movebank Data Repository.
+</div>
+<div id="ref-meier2020data_lausanne" class="csl-entry" role="listitem">
+Meier, Christoph M., and Felix Liechti. 2020c. <em>Data from: <span>Switzerland Lausanne</span> – Long Term Study on Migratory Movement of <span>Alpine</span> Swifts (<em>Apus Melba</em>)</em>. <a href="https://doi.org/10.5441/001/1.ff3138d1" class="uri">Https://doi.org/10.5441/001/1.ff3138d1</a>; Movebank Data Repository.
+</div>
+<div id="ref-meier2020data_lenzburg" class="csl-entry" role="listitem">
+Meier, Christoph M., and Felix Liechti. 2020d. <em>Data from: <span>Switzerland Lenzburg</span> – Long Term Study on Migratory Movement of <span>Alpine</span> Swifts (<em>Apus Melba</em>)</em>. <a href="https://doi.org/10.5441/001/1.31v444sc" class="uri">Https://doi.org/10.5441/001/1.31v444sc</a>; Movebank Data Repository.
+</div>
+<div id="ref-meier2020data_luzern" class="csl-entry" role="listitem">
+Meier, Christoph M., and Felix Liechti. 2020e. <em>Data from: <span>Switzerland Luzern</span> – Long Term Study on Migratory Movement of <span>Alpine</span> Swifts (<em>Apus Melba</em>)</em>. <a href="https://doi.org/10.5441/001/1.21nq5932" class="uri">Https://doi.org/10.5441/001/1.21nq5932</a>; Movebank Data Repository.
+</div>
+<div id="ref-meier2020data_solothurn" class="csl-entry" role="listitem">
+Meier, Christoph M., and Felix Liechti. 2020f. <em>Data from: <span>Switzerland Solothurn</span> – Long Term Study on Migratory Movement of <span>Alpine</span> Swifts (<em>Apus Melba</em>)</em>. <a href="https://doi.org/10.5441/001/1.nn518dc4" class="uri">Https://doi.org/10.5441/001/1.nn518dc4</a>; Movebank Data Repository.
+</div>
+<div id="ref-meier2020data_bulgaria" class="csl-entry" role="listitem">
+Meier, Christoph M., Strahil G. Peev, and Felix Liechti. 2020. <em>Data from: <span>Bulgaria Sofia</span> – Long Term Study on Migratory Movement of <span>Alpine</span> Swifts (<em>Apus Melba</em>)</em>. <a href="https://doi.org/10.5441/001/1.7kd62k00" class="uri">Https://doi.org/10.5441/001/1.7kd62k00</a>; Movebank Data Repository.
+</div>
+<div id="ref-shneiderman1996" class="csl-entry" role="listitem">
+Shneiderman, Ben. 1996. <span>“The Eyes Have It: A Task by Data Type Taxonomy for Information Visualizations.”</span> <em>Proceedings of the 1996 IEEE Symposium on Visual Languages</em>, 336–43. <a href="https://doi.org/10.1109/VL.1996.545307">https://doi.org/10.1109/VL.1996.545307</a>.
+</div>
+<div id="ref-thomas2005" class="csl-entry" role="listitem">
+Thomas, James J., and Kristin A. Cook. 2005. <em>Illuminating the Path: The Research and Development Agenda for Visual Analytics</em>. IEEE Computer Society. <a href="https://vis.cs.brown.edu/docs/pdf/bib/RD_Agenda_VisualAnalytics.pdf">https://vis.cs.brown.edu/docs/pdf/bib/RD_Agenda_VisualAnalytics.pdf</a>.
+</div>
+</div>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
