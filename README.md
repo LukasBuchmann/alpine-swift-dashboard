@@ -2,56 +2,24 @@
 
 An interactive R Shiny dashboard that visualises the trans-Saharan migration of the Alpine Swift (Tachymarptis melba, formerly Apus melba).
 
-## Huggingface Website
-The Dashboard is on https://rolfruettli-dashboard-alpine-swift.hf.space/.
+## Access to a hosted Dashboard
 
-## Quick start
+The Dashboard is hosted on https://rolfruettli-dashboard-alpine-swift.hf.space/ on `Huggingface`. Please note that starting up the Dashboard can take a few minutes upon visiting the link. Also the Dashboard might not display the best performance, as the Huggingface free tier only features limited computing capabilities.
+
+## Set-up for yourself
 
 To run the dashboard locally, follow these steps in order:
 
 ### 1) Installing Packages
 
-First, install and activate the required dependencies using the setup script:
+First, install the required dependencies. A first try might be to run the `_setup.R` script in an R session to install the required packages. This might or might not work perfectly depending on your operating system type (Windows, Mac, Linux).
 
-Windows:
 ```r
 source("_setup.R")
 ```
 
+Another possibility is to install a conda environment using the `environment.yml`. This will most likely only work on Linux systems and the `environment.yml` file was built on a `Linux Ubuntu` machine. A convenient way for `Windows` users to get quick access to a Linux distribution is to activate the `Windows Subsystem for Linux` and then installing a `Linux Distro` like `Ubuntu` or `Fedora`.
+
 ### 2) Run the application
 
-After the environment is ready, start the Shiny app from R:
-
-```r
-shiny::runApp()
-```
-
-## Project layout
-
-```
-.
-+- app.R                       # Shiny entry point
-+- _setup.R                    # Windows Setup
-+- R/
-|  +- helpers.R                # palettes, basemap config, legend helpers
-|  +- data_acquisition.R       # Movebank CSV ingestion / synthetic fallback
-|  +- data_processing.R        # cleaning, airspeed filter, daily aggregation
-|  +- mod_filters.R            # sidebar filter module
-|  +- mod_metrics.R            # KPI value boxes
-|  +- mod_animation.R          # merged map + animation + click-to-highlight
-|  +- mod_phenology.R          # latitude-by-doy plot
-+- data/raw/                   # synthetic + real Movebank CSVs 
-+- data/processed/             # tracks_processed.rds cache
-+- reports/
-|  +- about.md                 # rendered into the dashboard's About tab
-|  +- technical_report_2.qmd   # full academic write-up
-|  +- references.bib
-+- www/custom.css              # dashboard styling
-```
-
-## Reference
-
-Meier C.M., Karaardic H., Aymi R., Peev S.G., Witvliet W. & Liechti F.
-(2020). Population-specific adjustment of the annual cycle in a
-super-swift trans-Saharan migrant. *Journal of Avian Biology* 51:
-e02515. doi:[10.1111/jav.02515](https://doi.org/10.1111/jav.02515)
+After the environment is ready, start the Shiny app by running `app.R`. You might have to wrangle with some dependency issues here and there. We are really sorry for the inconvenience. To our current knowledge, shipping dependencies is a bit of a hassle in R.
