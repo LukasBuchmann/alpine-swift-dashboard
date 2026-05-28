@@ -1,35 +1,33 @@
 # Alpine Swift Migration Dashboard
 
-An interactive R Shiny dashboard that visualises the trans-Saharan migration
-of the Alpine Swift (*Tachymarptis melba*, formerly *Apus melba*). Built for
-the CCES module (FS 2026) at ZHAW Environmental Science, based on
-[Meier et al. 2020](https://doi.org/10.1111/jav.02515).
+An interactive R Shiny dashboard that visualises the trans-Saharan migration of the Alpine Swift (Tachymarptis melba, formerly Apus melba).
 
 ## Quick start
 
-```r
-# 1) Install all dependencies (run once after cloning)
-source("_setup.R")
+To run the dashboard locally, follow these steps in order:
 
-# 2) Optionally drop real Movebank CSVs into data/raw/movebank/
-#    (otherwise the dashboard runs on the bundled synthetic dataset)
-#    See reports/DOWNLOAD_MOVEBANK_DATA.md for step-by-step instructions.
+### 1) Set up the environment
 
-# 3) Launch
-shiny::runApp()
+First, install and activate the required dependencies using the provided Conda environment file:
+
+```bash
+conda env create -f environment.yml
+conda activate alpine-swift
 ```
 
-A green / amber banner in the sidebar tells you whether the dashboard is
-running on real Movebank Data Repository data or on the synthetic fallback.
+### 2) Run the application
 
+After the environment is ready, start the Shiny app from R:
 
+```r
+source("app.R")
+```
 
 ## Project layout
 
 ```
 .
 +- app.R                       # Shiny entry point
-+- _setup.R                    # dependency installer
 +- R/
 |  +- helpers.R                # palettes, basemap config, legend helpers
 |  +- data_acquisition.R       # Movebank CSV ingestion / synthetic fallback
