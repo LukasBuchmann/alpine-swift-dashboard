@@ -1,0 +1,49 @@
+```yaml id="win_env_01"
+name: alpine-swift-dashboard
+
+channels:
+  - conda-forge
+
+dependencies:
+  # Core R
+  - r-base=4.4
+  - r-shiny
+  - r-ggplot2
+  - r-dplyr
+  - r-tidyr
+  - r-readr
+  - r-lubridate
+  - r-stringr
+
+  # Geospatial stack (Windows-compatible builds)
+  - r-sf
+  - r-terra
+  - r-leaflet
+  - r-geosphere
+
+  # Data + performance
+  - r-data.table
+  - r-arrow
+
+  # Shiny UI extras
+  - r-shinydashboard
+  - r-shinycssloaders
+  - r-htmltools
+
+  # Reporting / Quarto support
+  - r-rmarkdown
+  - r-knitr
+  - pandoc
+
+  # System libraries (conda-managed, cross-platform)
+  - gdal
+  - geos
+  - proj
+  - sqlite
+  - curl
+  - openssl
+
+  # Python (light dependency, optional but safe)
+  - python=3.11
+  - pip
+```
