@@ -7,7 +7,7 @@ author:
   - name: "Etienne Duerig"
     affiliation: "ZHAW - Environmental Science"
 date: today
-abstract: |
+abstract:
   This report documents an interactive R Shiny dashboard that visualises
   the trans-Saharan migration of the Alpine Swift (*Tachymarptis melba*).
   Light-level geolocator tracks for 173 individuals from nine colonies

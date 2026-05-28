@@ -29,3 +29,6 @@ Thumbs.db
 *_cache/
 reports/technical_report.html
 reports/technical_report.pdf
+
+/.quarto/
+**/*.quarto_ipynb
