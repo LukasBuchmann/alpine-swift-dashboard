@@ -15,7 +15,7 @@ abstract:
   The dashboard follows the geovisual analytics framework and aims to provide
   a tool for in-depth exploration of this dataset. Key functionalities include
   a temporal animation of migration across the annual cycle, linked statistical
-  views, and interactive filtering by population and migration path (flyway)
+  views, and interactive filtering by population and migration path (flyway).
 
 format:
   html:
