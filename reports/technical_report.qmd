@@ -141,7 +141,7 @@ Clicking on a particular fix highlights the complete flight path of this bird ov
 
 # Individual Contributions
 
-Both Lukas and Etienne where involved in searching an appropriate Dataset for visualisation. Lukas Buchmann implemented the dashboard and the data processing pipeline, and took the lead in preparing the hand-in Git repository. Both Lukas and Etienne were involved in writing the technical report, where Etienne performed the high level orchestration. Both were involved in recording the explanatory video. Etienne set up a containerised version of the dashboard for hosting on Hugging Face.
+Both Lukas and Etienne where involved in searching an appropriate Dataset for visualisation. Lukas Buchmann implemented the dashboard and the data processing pipeline, and took the lead in preparing the hand-in Git repository. Etienne wrote the technical report. Both were involved in recording the explanatory video. Etienne set up a containerised version of the dashboard for hosting on Hugging Face.
 
 # Declaration of AI Use
 
